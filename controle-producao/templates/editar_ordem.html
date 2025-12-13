@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-warning text-dark">
+        <h3><i class="bi bi-pencil-square"></i> {{ title }}</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('editar_ordem', ordem_id=ordem.id) }}">
+            {{ form.hidden_tag() }}
+
+            {{ form.part_number_produto(id="part-number-hidden-input") }}
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Associação e Departamento</legend>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.os.label(class="form-label") }}
+                        {{ form.os(id="os-select", class="form-select" + (" is-invalid" if form.os.errors else "")) }}
+                        {% if form.os.errors %}<div class="invalid-feedback d-block">{% for e in form.os.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.departamento.label(class="form-label") }}
+                        {{ form.departamento(class="form-select" + (" is-invalid" if form.departamento.errors else "")) }}
+                        {% if form.departamento.errors %}<div class="invalid-feedback d-block">{% for e in form.departamento.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Cabeçalho</legend>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">N° Sequencial</label>
+                        <input type="text" class="form-control" value="{{ ordem.numero_sequencial }}" readonly>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.tipo_contrato.label(class="form-label") }}
+                        {{ form.tipo_contrato(class="form-select" + (" is-invalid" if form.tipo_contrato.errors else "")) }}
+                        {% if form.tipo_contrato.errors %}<div class="invalid-feedback d-block">{% for e in form.tipo_contrato.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.tipo_op.label(class="form-label") }}
+                        {{ form.tipo_op(class="form-control" + (" is-invalid" if form.tipo_op.errors else "")) }}
+                        {% if form.tipo_op.errors %}<div class="invalid-feedback d-block">{% for e in form.tipo_op.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.cliente.label(class="form-label") }}
+                        {{ form.cliente(id="cliente-input", class="form-control" + (" is-invalid" if form.cliente.errors else "")) }}
+                        {% if form.cliente.errors %}<div class="invalid-feedback d-block">{% for e in form.cliente.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.codigo.label(class="form-label") }}
+                        {{ form.codigo(class="form-control" + (" is-invalid" if form.codigo.errors else "")) }}
+                        {% if form.codigo.errors %}<div class="invalid-feedback d-block">{% for e in form.codigo.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Detalhes do Produto (Busca Part Number)</legend>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Código do Produto (Part Number)</label>
+                        <div class="input-group">
+                            <input type="text" id="codigo-busca-input" class="form-control"
+                                   placeholder="Digite ou pesquise o Part Number"
+                                   value="{{ form.part_number_produto.data or '' }}">
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#searchProductModal">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <div id="descricao-produto" class="form-text mt-2"></div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.quantidade.label(class="form-label") }}
+                        {{ form.quantidade(class="form-control" + (" is-invalid" if form.quantidade.errors else "")) }}
+                        {% if form.quantidade.errors %}<div class="invalid-feedback d-block">{% for e in form.quantidade.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.largura.label(class="form-label") }}
+                        {{ form.largura(class="form-control" + (" is-invalid" if form.largura.errors else "")) }}
+                        {% if form.largura.errors %}<div class="invalid-feedback d-block">{% for e in form.largura.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.comprimento.label(class="form-label") }}
+                        {{ form.comprimento(class="form-control" + (" is-invalid" if form.comprimento.errors else "")) }}
+                        {% if form.comprimento.errors %}<div class="invalid-feedback d-block">{% for e in form.comprimento.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.pe_direito.label(class="form-label") }}
+                        {{ form.pe_direito(class="form-control" + (" is-invalid" if form.pe_direito.errors else "")) }}
+                        {% if form.pe_direito.errors %}<div class="invalid-feedback d-block">{% for e in form.pe_direito.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Datas e Prazos</legend>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_emissao.label(class="form-label") }}
+                        {{ form.data_emissao(class="form-control" + (" is-invalid" if form.data_emissao.errors else ""), type="date") }}
+                        {% if form.data_emissao.errors %}<div class="invalid-feedback d-block">{% for e in form.data_emissao.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_inicio_previsto.label(class="form-label") }}
+                        {{ form.data_inicio_previsto(class="form-control" + (" is-invalid" if form.data_inicio_previsto.errors else ""), type="date") }}
+                        {% if form.data_inicio_previsto.errors %}<div class="invalid-feedback d-block">{% for e in form.data_inicio_previsto.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_termino_previsto.label(class="form-label") }}
+                        {{ form.data_termino_previsto(class="form-control" + (" is-invalid" if form.data_termino_previsto.errors else ""), type="date") }}
+                        {% if form.data_termino_previsto.errors %}<div class="invalid-feedback d-block">{% for e in form.data_termino_previsto.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                     <div class="col-md-3 mb-3">
+                        {{ form.data_carregamento.label(class="form-label") }}
+                        {{ form.data_carregamento(class="form-control" + (" is-invalid" if form.data_carregamento.errors else ""), type="date") }}
+                        {% if form.data_carregamento.errors %}<div class="invalid-feedback d-block">{% for e in form.data_carregamento.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+                 <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.setor.label(class="form-label") }}
+                        {{ form.setor(class="form-control" + (" is-invalid" if form.setor.errors else "")) }}
+                        {% if form.setor.errors %}<div class="invalid-feedback d-block">{% for e in form.setor.errors %}{{e}}{% endfor %}</div>{% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Romaneio para Produção</legend>
+                <div id="romaneio-list">
+                    {% for item in form.romaneios %}
+                    <div class="row align-items-end mb-2 dynamic-item" data-type="romaneio">
+                        {{ item.hidden_tag() }}
+                        <div class="col-md-2">{{ item.id_item(class="form-control", placeholder="ID") }}</div>
+                        <div class="col-md-4">{{ item.descricao(class="form-control", placeholder="Descrição") }}</div>
+                        <div class="col-md-2">{{ item.quantidade(class="form-control", placeholder="Qnt") }}</div>
+                        <div class="col-md-3">{{ item.materia_prima_utilizada(class="form-control", placeholder="Matéria Prima") }}</div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-danger btn-sm w-100 remove-item">Remover</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2 add-item" data-target="romaneio-list">Adicionar Linha de Romaneio</button>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Controle de Produção</legend>
+                <div id="producao-list">
+                    {% for item in form.controles_producao %}
+                    <div class="row align-items-center mb-3 pb-3 border-bottom dynamic-item" data-type="producao">
+                        {{ item.hidden_tag() }}
+                        <div class="col-md-2 mb-2">{{ item.turno.label(class="form-label") }}{{ item.turno(class="form-select") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.processo.label(class="form-label") }}{{ item.processo(class="form-control") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.maquina.label(class="form-label") }}{{ item.maquina(class="form-control") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.operador.label(class="form-label") }}{{ item.operador(class="form-control") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.qualidade.label(class="form-label") }}{{ item.qualidade(class="form-select") }}</div>
+                        <div class="col-md-2 mb-2 d-flex align-items-end"><button type="button" class="btn btn-danger btn-sm w-100 remove-item">Remover</button></div>
+                        <div class="col-md-2 mb-2">{{ item.data_inicio.label(class="form-label") }}{{ item.data_inicio(class="form-control", type="date") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.hora_inicio.label(class="form-label") }}{{ item.hora_inicio(class="form-control", type="time") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.data_termino.label(class="form-label") }}{{ item.data_termino(class="form-control", type="date") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.hora_termino.label(class="form-label") }}{{ item.hora_termino(class="form-control", type="time") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.data_pausa.label(class="form-label") }}{{ item.data_pausa(class="form-control", type="date") }}</div>
+                        <div class="col-md-2 mb-2">{{ item.motivo_pausa.label(class="form-label") }}{{ item.motivo_pausa(class="form-control") }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2 add-item" data-target="producao-list">Adicionar Etapa de Produção</button>
+            </fieldset>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-warning btn-lg">Atualizar Ordem de Produção</button>
+                <a href="{{ url_for('lista_ordens') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="searchProductModal" tabindex="-1" aria-labelledby="searchProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="searchProductModalLabel">Pesquisar Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" id="modal-search-input" class="form-control" placeholder="Digite o Part Number, SKU ou Descrição para buscar...">
+                    <button class="btn btn-primary" type="button" id="modal-search-button">Pesquisar</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Part Number</th>
+                                <th>Descrição</th>
+                                <th>SKU</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-results-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // --- SCRIPT 1: Preenchimento automático da OS ---
+    const osSelect = document.getElementById('os-select');
+    const clienteInput = document.getElementById('cliente-input');
+    if (osSelect && clienteInput) {
+        // --- NOVO PARA EDIÇÃO: Dispara o evento ao carregar a página ---
+        if(osSelect.value) {
+            osSelect.dispatchEvent(new Event('change'));
+        }
+        // --- FIM NOVO ---
+        osSelect.addEventListener('change', async function() {
+            const osId = this.value;
+            if (!osId) { clienteInput.value = ''; return; }
+            try {
+                const response = await fetch(`/api/os/info?os_id=${osId}`);
+                const data = await response.json();
+                if (response.ok) {
+                    clienteInput.value = data.cliente || '';
+                } else {
+                    clienteInput.value = 'Erro: OS não encontrada';
+                }
+            } catch (error) {
+                clienteInput.value = 'Erro de conexão';
+            }
+        });
+    }
+
+    // --- SCRIPT 2 & 3: Modal de Produto e Busca de Descrição ---
+    const modalElement = document.getElementById('searchProductModal');
+    const codigoBuscaInput = document.getElementById('codigo-busca-input');
+    const descricaoDiv = document.getElementById('descricao-produto');
+    const partNumberHiddenInput = document.getElementById('part-number-hidden-input');
+
+    if (modalElement && codigoBuscaInput && partNumberHiddenInput) {
+        const modalSearchInput = document.getElementById('modal-search-input');
+        const modalSearchButton = document.getElementById('modal-search-button');
+        const resultsTbody = document.getElementById('modal-results-tbody');
+
+        async function performSearch() {
+            const query = modalSearchInput.value.trim();
+            if (query.length < 2) {
+                resultsTbody.innerHTML = '<tr><td colspan="4" class="text-center">Digite pelo menos 2 caracteres...</td></tr>';
+                return;
+            }
+            resultsTbody.innerHTML = '<tr><td colspan="4" class="text-center">Buscando...</td></tr>';
+            try {
+                const response = await fetch(`/api/produtos/search?q=${query}`);
+                const produtos = await response.json();
+                resultsTbody.innerHTML = '';
+                if (produtos.length > 0) {
+                    produtos.forEach(p => {
+                        const row = `
+                            <tr>
+                                <td>${p.part_number}</td>
+                                <td>${p.descricao}</td>
+                                <td>${p.sku || 'N/A'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-success select-product-btn"
+                                            data-part-number="${p.part_number}"
+                                            data-bs-dismiss="modal">Selecionar</button>
+                                </td>
+                            </tr>`;
+                        resultsTbody.insertAdjacentHTML('beforeend', row);
+                    });
+                } else {
+                    resultsTbody.innerHTML = '<tr><td colspan="4" class="text-center">Nenhum produto encontrado.</td></tr>';
+                }
+            } catch (error) {
+                resultsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Erro na busca.</td></tr>';
+            }
+        }
+
+        modalSearchButton.addEventListener('click', performSearch);
+        modalSearchInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') performSearch(); });
+
+        resultsTbody.addEventListener('click', function(e) {
+            if (e.target.classList.contains('select-product-btn')) {
+                const selectedPartNumber = e.target.dataset.partNumber;
+                codigoBuscaInput.value = selectedPartNumber;
+                partNumberHiddenInput.value = selectedPartNumber; // Preenche o campo oculto
+                codigoBuscaInput.dispatchEvent(new Event('blur'));
+            }
+        });
+
+        codigoBuscaInput.addEventListener('blur', async function() {
+            const partNumber = this.value.trim();
+            descricaoDiv.textContent = '';
+            descricaoDiv.className = 'form-text mt-2';
+            partNumberHiddenInput.value = ''; // Limpa o campo oculto
+
+            if (!partNumber) return;
+            descricaoDiv.textContent = 'Buscando...';
+            try {
+                const response = await fetch(`/api/produto/info?part_number=${partNumber}`);
+                const data = await response.json();
+                if (response.ok) {
+                    descricaoDiv.textContent = `Descrição: ${data.descricao}`;
+                    descricaoDiv.classList.add('text-success', 'fw-bold');
+                    partNumberHiddenInput.value = partNumber; // Preenche o campo oculto no sucesso
+                } else {
+                    descricaoDiv.textContent = data.error;
+                    descricaoDiv.classList.add('text-danger');
+                }
+            } catch (error) {
+                descricaoDiv.textContent = 'Erro ao buscar o produto.';
+            }
+        });
+
+        // ==================== NOVO SCRIPT PARA EDIÇÃO ====================
+        // Dispara o evento 'blur' no carregamento da página se o campo já tiver um valor
+        if (codigoBuscaInput.value) {
+            codigoBuscaInput.dispatchEvent(new Event('blur'));
+        }
+        // =================================================================
+    }
+
+    // --- SCRIPT 4: Adicionar/Remover Linhas Dinâmicas ---
+    const cardBody = document.querySelector('.card-body');
+    if (cardBody) {
+        cardBody.addEventListener('click', function(e) {
+            // Adicionar item
+            if (e.target && e.target.matches('.add-item')) {
+                const targetId = e.target.dataset.target;
+                const list = document.getElementById(targetId);
+                if (!list || !list.children.length) return;
+                const templateItem = list.children[0];
+                const itemType = templateItem.dataset.type;
+                const index = Date.now();
+                const newItem = templateItem.cloneNode(true);
+
+                newItem.querySelectorAll('input, select, textarea').forEach(el => {
+                    if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                    else if (el.type !== 'hidden') el.value = '';
+                    el.classList.remove('is-invalid');
+                    const errorDiv = el.closest('.mb-2,.mb-3')?.querySelector('.invalid-feedback');
+                    if (errorDiv) errorDiv.innerHTML = '';
+                });
+
+                newItem.querySelectorAll('input, select, textarea, label').forEach(el => {
+                    let namePrefix;
+                    if (itemType === 'romaneio') {
+                        namePrefix = 'romaneios';
+                    } else if (itemType === 'producao') {
+                        namePrefix = 'controles_producao';
+                    } else {
+                        return;
+                    }
+
+                    const idRegex = new RegExp(`(${namePrefix})-(\\d+|__prefix__)-`);
+                    const nameRegex = new RegExp(`(${nameMrefix})-\\d+-`); // Corrigido aqui
+                    const replacement = `$1-${index}-`;
+
+                    if (el.name) el.name = el.name.replace(nameRegex, replacement);
+                    if (el.id) el.id = el.id.replace(idRegex, replacement);
+                    if (el.htmlFor) el.htmlFor = el.htmlFor.replace(idRegex, replacement);
+                });
+                list.appendChild(newItem);
+            }
+            // Remover item
+            if (e.target && e.target.matches('.remove-item')) {
+                const item = e.target.closest('.dynamic-item');
+                if (item.parentElement.getElementsByClassName('dynamic-item').length > 1) {
+                    item.remove();
+                } else {
+                    alert('Pelo menos uma linha é necessária.');
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

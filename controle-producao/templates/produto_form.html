@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<h2 class="mt-3 mb-4"><i class="bi bi-box-seam-fill"></i> {{ title }}</h2>
+
+<div class="card shadow">
+    <div class="card-body">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.part_number.label(class="form-label") }}
+                    {{ form.part_number(class="form-control" + (" is-invalid" if form.part_number.errors else "")) }}
+                    {% if form.part_number.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.part_number.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.sku.label(class="form-label") }}
+                    {{ form.sku(class="form-control" + (" is-invalid" if form.sku.errors else "")) }}
+                    {% if form.sku.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.sku.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    {{ form.descricao.label(class="form-label") }}
+                    {{ form.descricao(class="form-control" + (" is-invalid" if form.descricao.errors else "")) }}
+                    {% if form.descricao.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.descricao.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    {{ form.tipo_de_material.label(class="form-label") }}
+                    {{ form.tipo_de_material(class="form-control" + (" is-invalid" if form.tipo_de_material.errors else "")) }}
+                    {% if form.tipo_de_material.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.tipo_de_material.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 mb-3">
+                    {{ form.custo.label(class="form-label") }}
+                    {{ form.custo(class="form-control" + (" is-invalid" if form.custo.errors else "")) }}
+                    {% if form.custo.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.custo.errors %}<span>{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

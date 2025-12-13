@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <span class="badge bg-dark">{{ os.fase }}</span>
+                OS #{{ os.numero }}
+            </h2>
+            <small class="text-muted">Empresa: <strong>{{ os.empresa or 'Não informada' }}</strong></small>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('lista_os') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+            <a href="{{ url_for('imprimir_os', os_id=os.id) }}" target="_blank" class="btn btn-outline-dark">
+                <i class="bi bi-printer"></i> Imprimir
+            </a>
+            <a href="{{ url_for('editar_os', os_id=os.id) }}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <div class="card mb-3 border-primary">
+                <div class="card-header bg-primary text-white fw-bold">1. Definições e Cronograma</div>
+                <div class="card-body bg-light">
+                    <div class="row mb-3 border-bottom pb-3">
+                        <div class="col-md-3">
+                            <label class="fw-bold text-muted small">STATUS ATUAL</label>
+                            <div>
+                                {% if os.status == 'Aberta' %} <span class="badge bg-success">Aberta</span>
+                                {% elif os.status == 'Cancelada' %} <span class="badge bg-danger">Cancelada</span>
+                                {% else %} <span class="badge bg-warning text-dark">{{ os.status }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">TIPO DE O.S.</label><div class="fs-5 fw-bold">{{ os.Tipo_OS or '-' }}</div></div>
+                        <div class="col-md-6"><label class="fw-bold text-muted small">EMPRESA DESTINADA</label><div class="fs-5">{{ os.empresa or '-' }}</div></div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col border-end">
+                            <label class="fw-bold text-muted small d-block">EMISSÃO</label>
+                            <span class="fs-6">{{ os.data_emissao.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        <div class="col border-end">
+                            <label class="fw-bold text-muted small d-block">INÍCIO</label>
+                            <span class="fs-6">{{ os.data_inicio.strftime('%d/%m/%Y') if os.data_inicio else '-' }}</span>
+                        </div>
+                        <div class="col border-end">
+                            <label class="fw-bold text-muted small d-block">PREV. TÉRMINO</label>
+                            <span class="fs-6">{{ os.data_termino.strftime('%d/%m/%Y') if os.data_termino else '-' }}</span>
+                        </div>
+                        <div class="col border-end bg-white border rounded py-1 mx-1">
+                            <label class="fw-bold text-primary small d-block">ENTREGA</label>
+                            <span class="fw-bold">{{ os.data_entrega.strftime('%d/%m/%Y') if os.data_entrega else '-' }}</span>
+                        </div>
+                        <div class="col bg-white border rounded py-1 mx-1">
+                            <label class="fw-bold text-success small d-block">CONCLUSÃO</label>
+                            <span class="fw-bold">{{ os.data_conclusao.strftime('%d/%m/%Y') if os.data_conclusao else '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-light fw-bold">2. Dados do Cliente e Locais</div>
+                <div class="card-body">
+                    <div class="row mb-3 pb-3 border-bottom">
+                        <div class="col-md-6"><label class="fw-bold text-muted small">FANTASIA</label><div class="fs-5">{{ os.cliente }}</div></div>
+                        <div class="col-md-6"><label class="fw-bold text-muted small">RAZÃO SOCIAL</label><div>{{ os.Razao or '-' }}</div></div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3"><label class="fw-bold text-muted small">CNPJ</label><div>{{ os.CNPJ or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">INSC. ESTADUAL</label><div>{{ os.Insc or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">TELEFONE</label><div>{{ os.telefone or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">EMAIL</label><div>{{ os.email or '-' }}</div></div>
+                    </div>
+
+                    <ul class="nav nav-tabs mb-3" id="viewAddressTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="view-principal-tab" data-bs-toggle="tab" data-bs-target="#view-principal" type="button">📍 Endereço Principal</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="view-faturamento-tab" data-bs-toggle="tab" data-bs-target="#view-faturamento" type="button">💲 Faturamento</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="view-montagem-tab" data-bs-toggle="tab" data-bs-target="#view-montagem" type="button">🔨 Local de Montagem</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-3 border border-top-0 rounded-bottom bg-light">
+                        <div class="tab-pane fade show active" id="view-principal">
+                            <div class="row">
+                                <div class="col-md-6"><label class="fw-bold text-muted small">ENDEREÇO</label><div>{{ os.endereco or '-' }} - {{ os.Bairro or '' }}</div></div>
+                                <div class="col-md-4"><label class="fw-bold text-muted small">CIDADE/UF</label><div>{{ os.Cidade or '-' }} / {{ os.UF or '' }}</div></div>
+                                <div class="col-md-2"><label class="fw-bold text-muted small">CEP</label><div>{{ os.CEP or '-' }}</div></div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="view-faturamento">
+                            <div class="row mb-2">
+                                <div class="col-md-6"><label class="fw-bold text-muted small">ENDEREÇO FAT.</label><div>{{ os.fat_endereco or 'Mesmo do principal' }} - {{ os.fat_bairro or '' }}</div></div>
+                                <div class="col-md-4"><label class="fw-bold text-muted small">CIDADE/UF</label><div>{{ os.fat_cidade or '-' }} / {{ os.fat_uf or '' }}</div></div>
+                                <div class="col-md-2"><label class="fw-bold text-muted small">CEP</label><div>{{ os.fat_cep or '-' }}</div></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12"><label class="fw-bold text-muted small">EMAILS P/ FATURAMENTO</label><div>{{ os.fat_emails or '-' }}</div></div>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="view-montagem">
+                            <div class="row">
+                                <div class="col-md-6"><label class="fw-bold text-muted small">LOCAL MONTAGEM</label><div>{{ os.mont_endereco or 'Mesmo do principal' }} - {{ os.mont_bairro or '' }}</div></div>
+                                <div class="col-md-4"><label class="fw-bold text-muted small">CIDADE/UF</label><div>{{ os.mont_cidade or '-' }} / {{ os.mont_uf or '' }}</div></div>
+                                <div class="col-md-2"><label class="fw-bold text-muted small">CEP</label><div>{{ os.mont_cep or '-' }}</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-light fw-bold">3. Dados Técnicos e Contrato</div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                         <div class="col-md-3"><label class="fw-bold text-muted small">TIPO CONTRATO</label><div class="fs-5">{{ os.tipo_contrato or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">TIPO LOCAÇÃO</label><div>{{ os.TipoLoc or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">MODELO</label><div>{{ os.Modelo or '-' }}</div></div>
+
+                        <div class="col-md-3">
+                            <label class="fw-bold text-muted small">VALOR TOTAL</label>
+                            {% if current_user.can_see_money %}
+                                <div class="text-success fw-bold">R$ {{ os.valor | format_currency }}</div>
+                            {% else %}
+                                <div class="text-muted"><i class="bi bi-lock-fill"></i> R$ *****</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3"><label class="fw-bold text-muted small">DIMENSÕES</label><div>{% if os.largura %}{{ os.largura }}x{{ os.comprim }}m{% else %}-{% endif %}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">PÉ DIREITO</label><div>{{ os.Pedireito or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">PISO</label><div>{{ os.Piso or '-' }}</div></div>
+                        <div class="col-md-3"><label class="fw-bold text-muted small">INTEGRAÇÃO</label><div>{{ os.integracao or '-' }}</div></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12"><label class="fw-bold text-muted small">ACESSÓRIOS</label><div class="p-2 bg-light border rounded">{{ os.Acessorios or 'Nenhum acessório listado.' }}</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-light fw-bold text-primary"><i class="bi bi-truck"></i> Logística de Carregamento</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead class="table-light"><tr><th class="ps-3">Data</th><th>Placa / Veículo</th><th>Documento</th><th>Obs</th></tr></thead>
+                        <tbody>
+                            {% for carga in os.carregamentos %}
+                            <tr>
+                                <td class="ps-3">{{ carga.data.strftime('%d/%m/%Y') }}</td>
+                                <td class="fw-bold">{{ carga.placa_caminhao or '-' }}</td>
+                                <td>{{ carga.documento_referencia or '-' }}</td>
+                                <td>{{ carga.observacao or '' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center text-muted py-3">Nenhum carregamento registrado.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+             <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3 h-100">
+                        <div class="card-header bg-light fw-bold text-primary border-top border-primary border-3">Custos Operacionais</div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0 table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Despesa</th>
+                                        <th>Resp.</th>
+                                        {% if current_user.can_see_money %}
+                                            <th class="text-end text-primary">Previsto</th>
+                                            <th class="text-end text-success">Realizado</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set ns_op = namespace(total_prev=0, total_real=0) %}
+                                    {% for custo in os.custos_operacionais %}
+                                        {% set ns_op.total_prev = ns_op.total_prev + custo.valor %}
+                                        {% if custo.valor_realizado %}{% set ns_op.total_real = ns_op.total_real + custo.valor_realizado %}{% endif %}
+                                    <tr>
+                                        <td>{{ custo.despesa.descricao }}</td>
+                                        <td>{{ custo.responsavel }}</td>
+                                        {% if current_user.can_see_money %}
+                                            <td class="text-end text-primary">R$ {{ custo.valor | format_currency }}</td>
+                                            <td class="text-end text-success fw-bold">{% if custo.valor_realizado %}R$ {{ custo.valor_realizado | format_currency }}{% else %} - {% endif %}</td>
+                                        {% endif %}
+                                    </tr>
+                                    {% else %}<tr><td colspan="4" class="text-center text-muted">Sem registros.</td></tr>{% endfor %}
+                                </tbody>
+                                {% if current_user.can_see_money %}
+                                <tfoot class="table-light"><tr class="fw-bold"><td colspan="2" class="text-end">Total:</td><td class="text-end text-primary">R$ {{ ns_op.total_prev | format_currency }}</td><td class="text-end text-success">R$ {{ ns_op.total_real | format_currency }}</td></tr></tfoot>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card mb-3 h-100">
+                        <div class="card-header bg-light fw-bold text-success border-top border-success border-3">Custos de Visita</div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped mb-0 table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Despesa</th>
+                                        <th>Resp.</th>
+                                        {% if current_user.can_see_money %}
+                                            <th class="text-end text-primary">Previsto</th>
+                                            <th class="text-end text-success">Realizado</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                     {% set ns_vis = namespace(total_prev=0, total_real=0) %}
+                                    {% for custo in os.custos_visitas %}
+                                        {% set ns_vis.total_prev = ns_vis.total_prev + custo.valor %}
+                                        {% if custo.valor_realizado %}{% set ns_vis.total_real = ns_vis.total_real + custo.valor_realizado %}{% endif %}
+                                    <tr>
+                                        <td>{{ custo.despesa.descricao }}</td>
+                                        <td>{{ custo.responsavel }}</td>
+                                        {% if current_user.can_see_money %}
+                                            <td class="text-end text-primary">R$ {{ custo.valor | format_currency }}</td>
+                                            <td class="text-end text-success fw-bold">{% if custo.valor_realizado %}R$ {{ custo.valor_realizado | format_currency }}{% else %} - {% endif %}</td>
+                                        {% endif %}
+                                    </tr>
+                                    {% else %}<tr><td colspan="4" class="text-center text-muted">Sem registros.</td></tr>{% endfor %}
+                                </tbody>
+                                {% if current_user.can_see_money %}
+                                <tfoot class="table-light"><tr class="fw-bold"><td colspan="2" class="text-end">Total:</td><td class="text-end text-primary">R$ {{ ns_vis.total_prev | format_currency }}</td><td class="text-end text-success">R$ {{ ns_vis.total_real | format_currency }}</td></tr></tfoot>
+                                {% endif %}
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-light fw-bold">6. Observações Gerais</div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Observações:</strong> {{ os.observacoes or 'Nenhuma observação.' }}</p>
+                    <hr>
+                    <p class="mb-0"><strong>Notas Adicionais:</strong> {{ os.Obs2 or 'Nenhuma nota adicional.' }}</p>
+                </div>
+            </div>
+
+            <div class="card mt-4 mb-5 border-secondary">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Histórico de Revisões (Rev. Atual: {{ os.revisao }})</h5>
+                    <button type="button" class="btn btn-light btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalNovaRevisao">
+                        <i class="bi bi-plus-circle"></i> Fechar Versão Atual
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr><th>Rev.</th><th>Arquivado em</th><th>Responsável</th><th>Motivo</th><th class="text-center">Ação</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for ver in os.versoes %}
+                            <tr>
+                                <td class="fw-bold">{{ ver.numero_revisao }}</td>
+                                <td>{{ ver.data_arquivamento.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ ver.usuario_responsavel }}</td>
+                                <td>{{ ver.motivo }}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalVer{{ ver.id }}">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </button>
+
+                                    <div class="modal fade" id="modalVer{{ ver.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-dark text-white">
+                                                    <h5 class="modal-title mb-0">Revisão Histórica #{{ ver.numero_revisao }}</h5>
+                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                </div>
+
+                                                <div class="modal-body bg-light text-start">
+                                                    {% set snap = ver.dados_snapshot | from_json %}
+
+                                                    <div class="alert alert-info py-2 small">
+                                                        <i class="bi bi-info-circle"></i> Você está visualizando uma versão arquivada. Campos em <span class="bg-warning bg-opacity-25 px-1 border rounded">amarelo</span> indicam dados diferentes da versão atual.
+                                                    </div>
+
+                                                    <div class="card mb-3 shadow-sm">
+                                                        <div class="card-body">
+                                                            <div class="row">
+                                                                <div class="col-md-8">
+                                                                    <label class="small fw-bold">CLIENTE</label>
+                                                                    <div class="{% if snap.cabecalho.cliente != os.cliente %}bg-warning bg-opacity-25 p-1 rounded{% endif %}">
+                                                                        {{ snap.cabecalho.cliente }}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="col-md-4">
+                                                                    <label class="small fw-bold">VALOR TOTAL</label>
+                                                                    {% if current_user.can_see_money %}
+                                                                        <div class="fw-bold text-success {% if snap.cabecalho.valor_total|float != os.valor|float %}bg-warning bg-opacity-25 p-1 rounded{% endif %}">
+                                                                            R$ {{ snap.cabecalho.valor_total | format_currency }}
+                                                                        </div>
+                                                                    {% else %}
+                                                                        <div class="text-muted"><i class="bi bi-lock-fill"></i> R$ *****</div>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {% if current_user.can_see_money %}
+                                                        <h6 class="fw-bold mt-3 ps-1 border-start border-4 border-primary">Custos (Nesta Versão)</h6>
+                                                        <div class="table-responsive bg-white border rounded shadow-sm">
+                                                            <table class="table table-sm table-striped mb-0 small">
+                                                                <thead class="table-light"><tr><th>Tipo</th><th>Despesa</th><th>Valor Prev.</th><th>Valor Real.</th></tr></thead>
+                                                                <tbody>
+                                                                    {% for custo in snap.custos %}
+                                                                    <tr>
+                                                                        <td>{{ custo.tipo }}</td>
+                                                                        <td>{{ custo.despesa }}</td>
+                                                                        <td class="text-end">R$ {{ custo.valor_previsto | format_currency }}</td>
+                                                                        <td class="text-end">{% if custo.valor_realizado %}R$ {{ custo.valor_realizado | format_currency }}{% else %}-{% endif %}</td>
+                                                                    </tr>
+                                                                    {% endfor %}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="alert alert-secondary text-center small"><i class="bi bi-lock-fill"></i> Detalhes financeiros restritos.</div>
+                                                    {% endif %}
+
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovaRevisao" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('gerar_revisao', os_id=os.id) }}" method="POST">
+            <div class="modal-content">
+                <div class="modal-header bg-warning"><h5 class="modal-title text-dark">Gerar Nova Revisão</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="alert alert-info small">Isso salvará um Snapshot da OS atual como <strong>Revisão {{ os.revisao }}</strong>.</div>
+                    <input type="text" class="form-control" name="motivo" placeholder="Motivo da alteração..." required>
+                </div>
+                <div class="modal-footer"><button type="submit" class="btn btn-warning fw-bold">Arquivar</button></div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

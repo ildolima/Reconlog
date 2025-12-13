@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Impressão - OP {{ ordem.numero_sequencial }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        /* === ESTILOS GERAIS (TELA E IMPRESSÃO) === */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 11px; /* Fonte otimizada para caber mais */
+            color: #000;
+        }
+        .container {
+            max-width: 960px;
+            margin: 1rem auto;
+            background: #fff;
+            padding: 1.5rem;
+            border: 1px solid #dee2e6;
+        }
+
+        /* Cabeçalho Estilizado */
+        .op-header {
+            border-bottom: 3px solid #000;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .op-title { font-size: 1.5rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .op-number { font-size: 1.5rem; font-weight: 800; color: #dc3545; }
+
+        /* Títulos das Seções com Fundo Sólido */
+        .section-title {
+            background-color: #e9ecef !important;
+            border: 1px solid #000;
+            padding: 4px 8px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            margin-top: 10px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Rótulos e Valores */
+        .data-label {
+            font-weight: 700;
+            color: #333;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            display: block;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .data-value {
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-bottom: 1px dotted #ccc;
+            padding-bottom: 1px;
+            min-height: 18px;
+        }
+
+        /* Tabelas Refinadas */
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+        }
+        .table-custom th {
+            background-color: #dee2e6 !important;
+            border: 1px solid #000;
+            padding: 4px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            -webkit-print-color-adjust: exact;
+        }
+        .table-custom td {
+            border: 1px solid #000;
+            padding: 4px;
+            vertical-align: middle;
+        }
+
+        /* Checkbox visual */
+        .checkbox-box {
+            width: 12px; height: 12px; border: 1px solid #000; display: inline-block;
+        }
+        .checkbox-checked {
+            background-color: #000;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* === REGRAS RÍGIDAS DE IMPRESSÃO === */
+        @media print {
+            body {
+                background-color: #fff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .container { width: 100%; max-width: 100%; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+
+            .text-danger { color: #dc3545 !important; }
+
+            @page { size: A4; margin: 0.8cm; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <div class="text-end mb-3 no-print">
+            <button onclick="window.print()" class="btn btn-primary btn-sm"><i class="bi bi-printer-fill"></i> Imprimir</button>
+        </div>
+
+        <div class="op-header row align-items-end">
+            <div class="col-8">
+                <div class="op-title">Ordem de Produção</div>
+            </div>
+            <div class="col-4 text-end">
+                <div class="op-number">Nº {{ ordem.numero_sequencial }}</div>
+                <small>Emissão: {{ ordem.data_emissao.strftime('%d/%m/%Y') }}</small>
+            </div>
+        </div>
+
+        <div class="section-title">1. DADOS GERAIS</div>
+        <div class="row g-2">
+            <div class="col-3"><span class="data-label">Status:</span> <div class="data-value">{{ ordem.status }}</div></div>
+            <div class="col-3"><span class="data-label">OS Origem:</span> <div class="data-value">{{ ordem.os.numero }}</div></div>
+            <div class="col-3"><span class="data-label">Departamento:</span> <div class="data-value">{{ ordem.departamento }}</div></div>
+            <div class="col-3"><span class="data-label">Setor:</span> <div class="data-value">{{ ordem.setor }}</div></div>
+        </div>
+        <div class="row g-2 mt-1">
+            <div class="col-6"><span class="data-label">Cliente:</span> <div class="data-value">{{ ordem.cliente }}</div></div>
+            <div class="col-3"><span class="data-label">Código:</span> <div class="data-value">{{ ordem.codigo }}</div></div>
+            <div class="col-3"><span class="data-label">Contrato:</span> <div class="data-value">{{ ordem.tipo_contrato }}</div></div>
+        </div>
+
+        <div class="section-title">2. PRODUTO E DIMENSÕES</div>
+        <div class="row g-2">
+            <div class="col-3"><span class="data-label">Part Number:</span> <div class="data-value">{{ ordem.part_number_produto or '-' }}</div></div>
+            <div class="col-5"><span class="data-label">Descrição do Produto:</span> <div class="data-value">{{ produto_descricao }}</div></div>
+            <div class="col-2"><span class="data-label">Quantidade:</span> <div class="data-value fw-bold" style="font-size: 1rem;">{{ ordem.quantidade }}</div></div>
+            <div class="col-2"><span class="data-label">Tipo OP:</span> <div class="data-value">{{ ordem.tipo_op }}</div></div>
+        </div>
+        <div class="row g-2 mt-1">
+            <div class="col-2"><span class="data-label">Largura:</span> <div class="data-value">{{ ordem.largura }}</div></div>
+            <div class="col-2"><span class="data-label">Comprimento:</span> <div class="data-value">{{ ordem.comprimento }}</div></div>
+            <div class="col-2"><span class="data-label">Pé Direito:</span> <div class="data-value">{{ ordem.pe_direito }}</div></div>
+            <div class="col-2"><span class="data-label">Piso:</span> <div class="data-value">{{ ordem.piso or '-' }}</div></div>
+            <div class="col-2"><span class="data-label">Acessórios:</span> <div class="data-value">{{ ordem.acessorios or '-' }}</div></div>
+            <div class="col-2"><span class="data-label">Observações:</span> <div class="data-value">{{ ordem.observacoes or '-' }}</div></div>
+        </div>
+
+        <div class="section-title">3. PRAZOS E FECHAMENTO</div>
+        <div class="row g-2">
+            <div class="col-3"><span class="data-label">Início Previsto:</span> <div class="data-value">{{ ordem.data_inicio_previsto.strftime('%d/%m/%Y') }}</div></div>
+            <div class="col-3"><span class="data-label">Término Previsto:</span> <div class="data-value">{{ ordem.data_termino_previsto.strftime('%d/%m/%Y') }}</div></div>
+
+            <div class="col-3"><span class="data-label">Carregamento:</span> <div class="data-value">{{ ordem.data_carregamento.strftime('%d/%m/%Y') }}</div></div>
+            <div class="col-3"><span class="data-label">Entrega Expedição:</span> <div class="data-value">{{ ordem.data_entrega_expedicao.strftime('%d/%m/%Y') if ordem.data_entrega_expedicao else '-' }}</div></div>
+        </div>
+
+        <div class="section-title">4. ROMANEIO DE MATERIAIS</div>
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th style="width: 5%; text-align: center;">OK</th>
+                    <th style="width: 10%;">ID Item</th>
+                    <th>Descrição do Material</th>
+                    <th style="width: 8%; text-align: center;">Qtd</th>
+                    <th style="width: 25%;">Matéria Prima</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in ordem.romaneios %}
+                <tr>
+                    <td style="text-align: center;">
+                        <div class="checkbox-box {% if item.concluido %}checkbox-checked{% endif %}"></div>
+                    </td>
+                    <td>{{ item.id_item or '' }}</td>
+                    <td>{{ item.descricao }}</td>
+                    <td style="text-align: center; font-weight: bold;">{{ item.quantidade }}</td>
+                    <td>{{ item.materia_prima_utilizada or '' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align: center; padding: 10px;">Nenhum item de romaneio.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="section-title">5. CONTROLE DE PRODUÇÃO</div>
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Processo / Turno</th>
+                    <th>Máq / Operador</th>
+                    <th style="text-align: center;">Início</th>
+                    <th style="text-align: center;">Término</th>
+                    <th>Obs / Pausa</th>
+                    <th style="text-align: right;">Tempo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for etapa in ordem.controles_producao %}
+                <tr>
+                    <td>
+                        <div class="fw-bold">{{ etapa.departamento or '-' }}</div>
+                        {{ etapa.processo or '-' }} <span style="font-size:0.8em; color:#666;">(T: {{ etapa.turno or '-' }})</span>
+                    </td>
+                    <td>
+                        {{ etapa.maquina or '-' }}<br>
+                        <small>{{ etapa.operador or '-' }}</small>
+                    </td>
+                    <td style="text-align: center;">
+                        {{ etapa.data_inicio.strftime('%d/%m') if etapa.data_inicio else '-' }}<br>
+                        <div style="font-size:0.8em;">{{ etapa.hora_inicio.strftime('%H:%M') if etapa.hora_inicio else '' }}</div>
+                    </td>
+                    <td style="text-align: center;">
+                        {{ etapa.data_termino.strftime('%d/%m') if etapa.data_termino else '-' }}<br>
+                        <div style="font-size:0.8em;">{{ etapa.hora_termino.strftime('%H:%M') if etapa.hora_termino else '' }}</div>
+                    </td>
+                    <td>
+                        {% if etapa.motivo_pausa %}
+                            <div style="background:#fff3cd; border:1px solid #ffeeba; padding:2px; font-size:0.8em; -webkit-print-color-adjust: exact;">
+                                <strong>PAUSA:</strong> {{ etapa.motivo_pausa }}
+                            </div>
+                        {% endif %}
+                        <div style="font-size:0.85em; margin-top:2px;">{{ etapa.obs_prod or '' }}</div>
+                    </td>
+                    <td style="text-align: right; font-weight: bold;">
+                        {{ etapa.duracao_formatada }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align: center; padding: 10px;">Nenhum apontamento.</td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-light">
+                    <td colspan="5" style="text-align: right; font-weight: bold; background-color: #e9ecef; -webkit-print-color-adjust: exact;">TOTAL:</td>
+                    <td style="text-align: right; font-weight: bold; background-color: #e9ecef; -webkit-print-color-adjust: exact;">{{ total_horas_gastas }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="section-title">6. OBSERVAÇÕES FINAIS</div>
+        <div style="border: 1px solid #000; padding: 5px; min-height: 40px; margin-bottom: 5px;">
+            <span style="font-weight: bold;">Observações:</span> {{ ordem.observacoes or '' }}
+        </div>
+        <div style="border: 1px solid #000; padding: 5px; min-height: 30px;">
+            <span style="font-weight: bold;">Acessórios:</span> {{ ordem.acessorios or 'Nenhum' }}
+        </div>
+
+        {% if ordem.assinatura_responsavel %}
+        <div class="row mt-4 justify-content-end">
+             <div class="col-4 text-center">
+                 <div style="border-bottom: 1px solid #000; margin-bottom: 2px;"></div>
+                 <span class="data-value" style="border:none;">{{ ordem.assinatura_responsavel }}</span><br>
+                 <span class="data-label">Responsável</span>
+             </div>
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>

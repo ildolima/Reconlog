@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilo para destacar o checkbox quando marcado */
+    .checkbox-container.is-checked {
+        background-color: #d1e7dd; /* Cor verde suave do Bootstrap */
+        border-color: #a3cfbb;
+        font-weight: 600;
+        transition: background-color 0.2s;
+    }
+</style>
+<div class="card shadow">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0"><i class="bi bi-wrench"></i> {{ title }}</h3>
+        {% if os_obj and os_obj.id %}
+            <a href="{{ url_for('imprimir_manutencao', os_id=os_obj.id) }}" target="_blank" class="btn btn-light btn-sm" title="Imprimir OS">
+                <i class="bi bi-printer-fill"></i> Imprimir
+            </a>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <fieldset class="border p-3 mb-4">
+                <legend class="float-none w-auto px-3">Dados de Abertura</legend>
+                <div class="row">
+                     <div class="col-md-3 mb-3">
+                        <label class="form-label">Número OS (Automático)</label>
+                        <input type="text" class="form-control"
+                               value="{{ os_obj.numero if os_obj else proximo_numero }}"
+                               readonly
+                               style="background-color: #e9ecef; font-weight: bold;">
+
+                        {{ form.numero(type="hidden", value=(os_obj.numero if os_obj else proximo_numero)) }}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_abertura.label(class="form-label") }}
+                        {{ form.data_abertura(class="form-control" + (" is-invalid" if form.data_abertura.errors else ""), type="date") }}
+                        {% if form.data_abertura.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.data_abertura.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.hora_abert.label(class="form-label") }}
+                        {{ form.hora_abert(class="form-control" + (" is-invalid" if form.hora_abert.errors else ""), type="time") }}
+                        {% if form.hora_abert.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.hora_abert.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.parada.label(class="form-label") }}
+                        {{ form.parada(class="form-select" + (" is-invalid" if form.parada.errors else "")) }}
+                        {% if form.parada.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.parada.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.solicitante.label(class="form-label") }}
+                        {{ form.solicitante(class="form-control" + (" is-invalid" if form.solicitante.errors else "")) }}
+                        {% if form.solicitante.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.solicitante.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.area_setor.label(class="form-label") }}
+                        {{ form.area_setor(class="form-control" + (" is-invalid" if form.area_setor.errors else "")) }}
+                        {% if form.area_setor.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.area_setor.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.maq_equip.label(class="form-label") }}
+                        {{ form.maq_equip(class="form-control" + (" is-invalid" if form.maq_equip.errors else "")) }}
+                        {% if form.maq_equip.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.maq_equip.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ form.ocorrencia.label(class="form-label") }}
+                        {{ form.ocorrencia(class="form-control", placeholder="Descreva brevemente o problema (Ex: Vazamento de óleo, Barulho no motor)") }}
+                    </div>
+                </div>
+
+            </fieldset>
+
+            <fieldset class="border p-3 mb-4">
+                <legend class="float-none w-auto px-3">Detalhes e Execução</legend>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Tipo de Manutenção (Marque a Opção)</label>
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="manut_corretiva">
+                                    {{ form.manut_corretiva(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.manut_corretiva.id }}">Maint. Corretiva</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="manut_preventiva">
+                                    {{ form.manut_preventiva(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.manut_preventiva.id }}">Maint. Preventiva</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="manut_preditiva">
+                                    {{ form.manut_preditiva(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.manut_preditiva.id }}">Maint. Preditiva</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="inspecao">
+                                    {{ form.inspecao(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.inspecao.id }}">Inspeção</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="melhorias">
+                                    {{ form.melhorias(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.melhorias.id }}">Melhorias</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="predial">
+                                    {{ form.predial(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.predial.id }}">Predial</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="p-2 border rounded form-check checkbox-container checkbox-toggle"
+                                     data-campo="outro">
+                                    {{ form.outro(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.outro.id }}">Outro Serviço</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        {{ form.sintoma.label(class="form-label") }}
+                        {{ form.sintoma(class="form-select" + (" is-invalid" if form.sintoma.errors else "")) }} {% if form.sintoma.errors %}...{% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.causa.label(class="form-label") }}
+                        {{ form.causa(class="form-select" + (" is-invalid" if form.causa.errors else "")) }} {% if form.causa.errors %}...{% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.intervencao.label(class="form-label") }}
+                        {{ form.intervencao(class="form-select" + (" is-invalid" if form.intervencao.errors else "")) }} {% if form.intervencao.errors %}...{% endif %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.materiais_utilizados.label(class="form-label") }}
+                        {{ form.materiais_utilizados(class="form-control", rows="2") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.materiais_comprados.label(class="form-label") }}
+                        {{ form.materiais_comprados(class="form-control", rows="2") }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.ficha_tec.label(class="form-label") }}
+                        {{ form.ficha_tec(class="form-control", rows="2") }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.obs_manut.label(class="form-label") }}
+                        {{ form.obs_manut(class="form-control", rows="2") }}
+                    </div>
+                </div>
+            </fieldset>
+            <fieldset class="border p-3 mb-4">
+                <legend class="float-none w-auto px-3">Apontamento (Manutentores)</legend>
+                <div id="manutentor-list">
+                    {% for apontamento in form.apontamentos %}
+                    <div class="dynamic-item border-bottom pb-2 mb-2" data-type="apontamento">
+
+                        <div class="row align-items-end mb-2">
+                            <div class="col-md-10">
+                                {{ apontamento.manutentor.label(class="form-label") }}
+                                {{ apontamento.manutentor(class="form-control" + (" is-invalid" if apontamento.manutentor.errors else "")) }}
+                                {% if apontamento.manutentor.errors %}
+                                <div class="invalid-feedback d-block">{% for error in apontamento.manutentor.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-danger btn-sm w-100 remove-item">Remover</button>
+                            </div>
+                        </div>
+
+                        <div class="row align-items-end">
+                            <div class="col-md-3">
+                                {{ apontamento.data_inicio.label(class="form-label") }}
+                                {{ apontamento.data_inicio(class="form-control", type="date") }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ apontamento.hora_inicio.label(class="form-label") }}
+                                {{ apontamento.hora_inicio(class="form-control", type="time") }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ apontamento.data_termino.label(class="form-label") }}
+                                {{ apontamento.data_termino(class="form-control", type="date") }}
+                            </div>
+                            <div class="col-md-3">
+                                {{ apontamento.hora_termino.label(class="form-label") }}
+                                {{ apontamento.hora_termino(class="form-control", type="time") }}
+                            </div>
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-info mt-2 add-item" data-target="manutentor-list">
+                    <i class="bi bi-plus-circle-fill"></i> Adicionar Manutentor
+                </button>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-4">
+                <legend class="float-none w-auto px-3">Encerramento e Assinaturas</legend>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_encerramento.label(class="form-label") }}
+                        {{ form.data_encerramento(class="form-control" + (" is-invalid" if form.data_encerramento.errors else ""), type="date") }}
+                        {% if form.data_encerramento.errors %}
+                        <div class="invalid-feedback d-block">{% for error in form.data_encerramento.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.assinatura1.label(class="form-label") }}
+                        {{ form.assinatura1(class="form-control") }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {{ form.assinatura2.label(class="form-label") }}
+                        {{ form.assinatura2(class="form-control") }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="d-grid gap-2 mt-4">
+                {{ form.submit(class="btn btn-success btn-lg") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const cardBody = document.querySelector('.card-body');
+    if (!cardBody) return;
+
+    // ===================================================================
+    // === SCRIPT 1/5: Lógica para adicionar/remover linhas dinâmicas (Apontamento) ===
+    // ===================================================================
+
+    cardBody.addEventListener('click', function(e) {
+        // --- ADICIONAR ITEM ---
+        if (e.target && e.target.matches('.add-item')) {
+            const targetId = e.target.dataset.target; // 'manutentor-list'
+            const list = document.getElementById(targetId);
+            if (!list || !list.children.length) return;
+
+            const templateItem = list.children[0];
+            const itemType = templateItem.dataset.type; // 'apontamento'
+            const index = Date.now();
+            const newItem = templateItem.cloneNode(true);
+            const namePrefix = itemType === 'apontamento' ? 'apontamentos' : 'apontamentos';
+
+            // Limpa valores e remove classes de erro
+            newItem.querySelectorAll('input, select, textarea').forEach(el => {
+                if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                else if (el.type !== 'hidden') el.value = '';
+                el.classList.remove('is-invalid');
+                const errorDiv = el.closest('.mb-2,.mb-3')?.querySelector('.invalid-feedback');
+                if (errorDiv) errorDiv.innerHTML = '';
+            });
+
+            // Atualiza IDs e Nomes
+            newItem.querySelectorAll('input, select, textarea, label').forEach(el => {
+                const idRegex = new RegExp(`(${namePrefix})-(\\d+|__prefix__)-`);
+                const nameRegex = new RegExp(`(${namePrefix})-\\d+-`);
+                const replacement = `$1-${index}-`;
+
+                if (el.name) el.name = el.name.replace(nameRegex, replacement);
+                if (el.id) el.id = el.id.replace(idRegex, replacement);
+                if (el.htmlFor) el.htmlFor = el.htmlFor.replace(idRegex, replacement);
+            });
+            list.appendChild(newItem);
+        }
+
+        // --- REMOVER ITEM ---
+        if (e.target && e.target.matches('.remove-item')) {
+            const item = e.target.closest('.dynamic-item');
+            if (item.parentElement.getElementsByClassName('dynamic-item').length > 1) {
+                item.remove();
+            } else {
+                alert('Pelo menos um Manutentor é necessário.');
+            }
+        }
+
+        // --- Lógica do Checkbox (agora dentro do addEventListener principal) ---
+        if (e.target && e.target.matches('.form-check-input')) {
+            const container = e.target.closest('.checkbox-container');
+            if (container) toggleStyle(container);
+        }
+    });
+
+    // ===================================================================
+    // === SCRIPT 2/6: Lógica para cores do Checkbox (Funções) ===
+    // ===================================================================
+
+    // 1. Função para aplicar o estilo
+    function toggleStyle(container) {
+        const checkbox = container.querySelector('.form-check-input');
+        if (checkbox.checked) {
+            container.classList.add('is-checked');
+        } else {
+            container.classList.remove('is-checked');
+        }
+    }
+
+    // 2. Aplica o estilo na carga inicial (para o modo de edição)
+    document.querySelectorAll('.checkbox-container').forEach(container => {
+        toggleStyle(container);
+
+        // Adiciona um listener direto ao input para cliques em áreas que não sejam o checkbox
+        container.addEventListener('click', function(e) {
+            if (!e.target.matches('.form-check-input')) {
+                const checkbox = container.querySelector('.form-check-input');
+                checkbox.checked = !checkbox.checked;
+                toggleStyle(container);
+                checkbox.dispatchEvent(new Event('change')); // Dispara evento de mudança
+            }
+        });
+    });
+
+
+}); // <-- Este é o único }); que fecha o document.addEventListener
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ... (seus outros scripts existentes) ...
+
+    // ===================================================================
+    // === SCRIPT 3: Dropdown Dependente (Setor -> Máquina) ===
+    // ===================================================================
+
+    // Recebe o mapa do Python
+    const maquinasPorSetor = {{ maquinas_map | default({}) | tojson | safe }};
+
+    const setorSelect = document.querySelector('#area_setor'); // ID padrão do WTForms
+    const maquinaSelect = document.querySelector('#maq_equip'); // ID padrão do WTForms
+
+    if (setorSelect && maquinaSelect) {
+
+        setorSelect.addEventListener('change', function() {
+            const setor = this.value;
+            const maquinas = maquinasPorSetor[setor] || [];
+
+            // Limpa opções atuais
+            maquinaSelect.innerHTML = '<option value="">Selecione a máquina...</option>';
+
+            // Adiciona novas opções
+            maquinas.forEach(function(maq) {
+                const option = document.createElement('option');
+                option.value = maq;
+                option.text = maq;
+                maquinaSelect.appendChild(option);
+            });
+        });
+    }
+});
+</script>
+
+{% endblock %}

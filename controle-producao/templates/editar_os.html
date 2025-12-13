@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-warning text-dark"> {# Cor de edição #}
+        <h3><i class="bi bi-pencil-square"></i> {{ title }}</h3>
+    </div>
+    <div class="card-body">
+        {# Action aponta para a rota de edição #}
+        <form method="POST" action="{{ url_for('editar_os', os_id=os.id) }}">
+            {{ form.hidden_tag() }}
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Dados Principais</legend>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.numero.label(class="form-label") }}
+                        {{ form.numero(class="form-control" + (" is-invalid" if form.numero.errors else "")) }}
+                        {% if form.numero.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.numero.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ form.cliente.label(class="form-label") }}
+                        {{ form.cliente(class="form-control" + (" is-invalid" if form.cliente.errors else "")) }}
+                        {% if form.cliente.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.cliente.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                     <div class="col-md-4 mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                        {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.status.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.valor.label(class="form-label") }}
+                        {{ form.valor(class="form-control" + (" is-invalid" if form.valor.errors else "")) }}
+                        {% if form.valor.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.valor.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row">
+                     <div class="col-md-3 mb-3">
+                        {{ form.TipoLoc.label(class="form-label") }}
+                        {{ form.TipoLoc(class="form-control" + (" is-invalid" if form.TipoLoc.errors else "")) }}
+                        {% if form.TipoLoc.errors %}<div class="invalid-feedback d-block">{% for e in form.TipoLoc.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-3 mb-3">
+                        {{ form.Tipo_OS.label(class="form-label") }}
+                        {{ form.Tipo_OS(class="form-control" + (" is-invalid" if form.Tipo_OS.errors else "")) }}
+                         {% if form.Tipo_OS.errors %}<div class="invalid-feedback d-block">{% for e in form.Tipo_OS.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-3 mb-3">
+                        {{ form.Modelo.label(class="form-label") }}
+                        {{ form.Modelo(class="form-control" + (" is-invalid" if form.Modelo.errors else "")) }}
+                         {% if form.Modelo.errors %}<div class="invalid-feedback d-block">{% for e in form.Modelo.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-3 mb-3">
+                        {{ form.vendedo.label(class="form-label") }}
+                        {{ form.vendedo(class="form-control" + (" is-invalid" if form.vendedo.errors else "")) }}
+                         {% if form.vendedo.errors %}<div class="invalid-feedback d-block">{% for e in form.vendedo.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                 </div>
+                 <div class="row">
+                     <div class="col-md-4 mb-3">
+                        {{ form.Razao.label(class="form-label") }}
+                        {{ form.Razao(class="form-control" + (" is-invalid" if form.Razao.errors else "")) }}
+                         {% if form.Razao.errors %}<div class="invalid-feedback d-block">{% for e in form.Razao.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.CNPJ.label(class="form-label") }}
+                        {{ form.CNPJ(class="form-control" + (" is-invalid" if form.CNPJ.errors else "")) }}
+                         {% if form.CNPJ.errors %}<div class="invalid-feedback d-block">{% for e in form.CNPJ.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.Insc.label(class="form-label") }}
+                        {{ form.Insc(class="form-control" + (" is-invalid" if form.Insc.errors else "")) }}
+                         {% if form.Insc.errors %}<div class="invalid-feedback d-block">{% for e in form.Insc.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                 </div>
+                 <div class="row">
+                     <div class="col-md-6 mb-3">
+                        {{ form.endereco.label(class="form-label") }}
+                        {{ form.endereco(class="form-control" + (" is-invalid" if form.endereco.errors else "")) }}
+                         {% if form.endereco.errors %}<div class="invalid-feedback d-block">{% for e in form.endereco.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.Bairro.label(class="form-label") }}
+                        {{ form.Bairro(class="form-control" + (" is-invalid" if form.Bairro.errors else "")) }}
+                         {% if form.Bairro.errors %}<div class="invalid-feedback d-block">{% for e in form.Bairro.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-2 mb-3">
+                        {{ form.CEP.label(class="form-label") }}
+                        {{ form.CEP(class="form-control" + (" is-invalid" if form.CEP.errors else "")) }}
+                         {% if form.CEP.errors %}<div class="invalid-feedback d-block">{% for e in form.CEP.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                 </div>
+                  <div class="row">
+                     <div class="col-md-3 mb-3">
+                        {{ form.Cidade.label(class="form-label") }}
+                        {{ form.Cidade(class="form-control" + (" is-invalid" if form.Cidade.errors else "")) }}
+                         {% if form.Cidade.errors %}<div class="invalid-feedback d-block">{% for e in form.Cidade.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-1 mb-3">
+                        {{ form.UF.label(class="form-label") }}
+                        {{ form.UF(class="form-control" + (" is-invalid" if form.UF.errors else "")) }}
+                         {% if form.UF.errors %}<div class="invalid-feedback d-block">{% for e in form.UF.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                         {% if form.email.errors %}<div class="invalid-feedback d-block">{% for e in form.email.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.telefone.label(class="form-label") }}
+                        {{ form.telefone(class="form-control" + (" is-invalid" if form.telefone.errors else "")) }}
+                         {% if form.telefone.errors %}<div class="invalid-feedback d-block">{% for e in form.telefone.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                 </div>
+                 <div class="row">
+                     <div class="col-md-4 mb-3">
+                        {{ form.Segtrab.label(class="form-label") }}
+                        {{ form.Segtrab(class="form-control" + (" is-invalid" if form.Segtrab.errors else "")) }}
+                         {% if form.Segtrab.errors %}<div class="invalid-feedback d-block">{% for e in form.Segtrab.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                     <div class="col-md-4 mb-3">
+                        {{ form.integracao.label(class="form-label") }}
+                        {{ form.integracao(class="form-control" + (" is-invalid" if form.integracao.errors else "")) }}
+                         {% if form.integracao.errors %}<div class="invalid-feedback d-block">{% for e in form.integracao.errors %}{{e}}{% endfor %}</div>{% endif %}
+                     </div>
+                 </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Datas</legend>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_emissao.label(class="form-label") }}
+                        {{ form.data_emissao(class="form-control" + (" is-invalid" if form.data_emissao.errors else ""), type="date") }}
+                        {% if form.data_emissao.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.data_emissao.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_inicio.label(class="form-label") }}
+                        {{ form.data_inicio(class="form-control" + (" is-invalid" if form.data_inicio.errors else ""), type="date") }}
+                        {% if form.data_inicio.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.data_inicio.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_termino.label(class="form-label") }}
+                        {{ form.data_termino(class="form-control" + (" is-invalid" if form.data_termino.errors else ""), type="date") }}
+                        {% if form.data_termino.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.data_termino.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        {{ form.data_carregamento.label(class="form-label") }}
+                        {{ form.data_carregamento(class="form-control" + (" is-invalid" if form.data_carregamento.errors else ""), type="date") }}
+                        {% if form.data_carregamento.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.data_carregamento.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </fieldset>
+
+             <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Observações Gerais</legend>
+                 <div class="row">
+                     <div class="col-md-12 mb-3">
+                        {{ form.observacoes.label(class="form-label") }}
+                        {{ form.observacoes(class="form-control" + (" is-invalid" if form.observacoes.errors else ""), rows="3") }}
+                        {% if form.observacoes.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.observacoes.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        {{ form.Obs2.label(class="form-label") }}
+                        {{ form.Obs2(class="form-control" + (" is-invalid" if form.Obs2.errors else ""), rows="2") }}
+                        {% if form.Obs2.errors %}
+                            <div class="invalid-feedback d-block">{% for error in form.Obs2.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                 </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Custos Operacionais</legend>
+                <div id="custos-op-list">
+                    {% for custo_op_form in form.custos_operacionais %}
+                        {{ custo_op_form.hidden_tag() }}
+                        <div class="row align-items-center mb-3 pb-2 border-bottom dynamic-item" data-type="custo_op">
+                            <div class="col-md-4 mb-2">
+                                {{ custo_op_form.despesa_id.label(class="form-label") }}
+                                {{ custo_op_form.despesa_id(class="form-select form-select-sm" + (" is-invalid" if custo_op_form.despesa_id.errors else "")) }}
+                                {% if custo_op_form.despesa_id.errors %}
+                                    <div class="invalid-feedback d-block">{% for error in custo_op_form.despesa_id.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                {{ custo_op_form.valor.label(class="form-label") }}
+                                {{ custo_op_form.valor(class="form-control form-control-sm" + (" is-invalid" if custo_op_form.valor.errors else "")) }}
+                                {% if custo_op_form.valor.errors %}
+                                     <div class="invalid-feedback d-block">{% for error in custo_op_form.valor.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                {{ custo_op_form.data.label(class="form-label") }}
+                                {{ custo_op_form.data(class="form-control form-control-sm" + (" is-invalid" if custo_op_form.data.errors else ""), type="date") }}
+                                {% if custo_op_form.data.errors %}
+                                     <div class="invalid-feedback d-block">{% for error in custo_op_form.data.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                {{ custo_op_form.observacao.label(class="form-label") }}
+                                {{ custo_op_form.observacao(class="form-control form-control-sm" + (" is-invalid" if custo_op_form.observacao.errors else "")) }}
+                                {% if custo_op_form.observacao.errors %}
+                                     <div class="invalid-feedback d-block">{% for error in custo_op_form.observacao.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-1 mb-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm w-100 remove-item">Remover</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2 add-item" data-target="custos-op-list">Adicionar Custo Operacional</button>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3">
+                <legend class="float-none w-auto px-3">Custos de Visita</legend>
+                 <div id="custos-vis-list">
+                    {% for custo_vis_form in form.custos_visitas %}
+                        {{ custo_vis_form.hidden_tag() }}
+                        <div class="row align-items-center mb-3 pb-2 border-bottom dynamic-item" data-type="custo_vis">
+                             <div class="col-md-4 mb-2">
+                                {{ custo_vis_form.despesa_id.label(class="form-label") }}
+                                {{ custo_vis_form.despesa_id(class="form-select form-select-sm" + (" is-invalid" if custo_vis_form.despesa_id.errors else "")) }}
+                                {% if custo_vis_form.despesa_id.errors %}
+                                    <div class="invalid-feedback d-block">{% for error in custo_vis_form.despesa_id.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                {{ custo_vis_form.valor.label(class="form-label") }}
+                                {{ custo_vis_form.valor(class="form-control form-control-sm" + (" is-invalid" if custo_vis_form.valor.errors else "")) }}
+                                {% if custo_vis_form.valor.errors %}
+                                     <div class="invalid-feedback d-block">{% for error in custo_vis_form.valor.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2 mb-2">
+                                {{ custo_vis_form.data.label(class="form-label") }}
+                                {{ custo_vis_form.data(class="form-control form-control-sm" + (" is-invalid" if custo_vis_form.data.errors else ""), type="date") }}
+                                {% if custo_vis_form.data.errors %}
+                                     <div class="invalid-feedback d-block">{% for error in custo_vis_form.data.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                {{ custo_vis_form.observacao.label(class="form-label") }}
+                                {{ custo_vis_form.observacao(class="form-control form-control-sm" + (" is-invalid" if custo_vis_form.observacao.errors else "")) }}
+                                {% if custo_vis_form.observacao.errors %}
+                                     <div class="invalid-feedback d-block">{% for error in custo_vis_form.observacao.errors %}<span>{{ error }}</span>{% endfor %}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-1 mb-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm w-100 remove-item">Remover</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2 add-item" data-target="custos-vis-list">Adicionar Custo de Visita</button>
+            </fieldset>
+
+            <div class="d-grid gap-2 mt-4">
+                {{ form.submit(class="btn btn-warning btn-lg", value="Atualizar OS") }} {# Botão Atualizar #}
+                <a href="{{ url_for('lista_os') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{# Inclui o mesmo script de os_form.html para adicionar/remover custos #}
+<script>
+    // Armazena as opções de despesa passadas pelo Python
+    const formCustosOp = {{ form.custos_operacionais | list }};
+    const formCustosVis = {{ form.custos_visitas | list }};
+    const despesasOpcoesOp = JSON.parse('{{ (formCustosOp[0].despesa_id.choices if formCustosOp else []) | default([]) | tojson | safe }}');
+    const despesasOpcoesVis = JSON.parse('{{ (formCustosVis[0].despesa_id.choices if formCustosVis else []) | default([]) | tojson | safe }}');
+
+    function populateSelect(selectElement, options) {
+        const currentValue = selectElement.value;
+        selectElement.innerHTML = '<option value="">Selecione...</option>';
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option[0];
+            opt.textContent = option[1];
+            selectElement.appendChild(opt);
+        });
+        if (currentValue) {
+            selectElement.value = currentValue;
+        }
+    }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const cardBody = document.querySelector('.card-body');
+    const custosOpList = document.getElementById('custos-op-list');
+    const custosVisList = document.getElementById('custos-vis-list');
+
+    function addDynamicItem(listElement) {
+        if (!listElement) return;
+        const items = listElement.getElementsByClassName('dynamic-item');
+        let templateItem;
+        if (items.length === 0) {
+             const firstRenderedItem = listElement.querySelector('.dynamic-item');
+             if(!firstRenderedItem) {
+                console.error("Template não encontrado:", listElement.id);
+                alert("Erro: Não foi possível adicionar linha.");
+                return;
+             }
+             templateItem = firstRenderedItem;
+        } else {
+             templateItem = items[0];
+        }
+
+        const itemType = templateItem.dataset.type;
+        const index = Date.now(); // Usa timestamp para ID único
+        const newItem = templateItem.cloneNode(true);
+
+        newItem.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type === 'date') {
+                 if (!el.value) el.valueAsDate = new Date();
+            } else if (el.tagName === 'SELECT') {
+                 el.selectedIndex = 0;
+            } else if (el.type !== 'hidden') {
+                 el.value = '';
+            }
+            el.classList.remove('is-invalid');
+            const errorDiv = el.closest('.mb-2')?.querySelector('.invalid-feedback');
+            if(errorDiv) errorDiv.innerHTML = '';
+        });
+
+        newItem.querySelectorAll('input, select, textarea, label').forEach(el => {
+            const namePrefix = itemType === 'custo_op' ? 'custos_operacionais' : 'custos_visitas';
+            const idRegex = new RegExp(`(${namePrefix})-(\\d+)-`);
+            const nameRegex = new RegExp(`(${nameZPrefix})-\\d+-`); // Corrigido: namePrefix
+            const replacement = `$1-${index}-`;
+
+            if (el.name) el.name = el.name.replace(nameRegex, replacement);
+            if (el.id) el.id = el.id.replace(idRegex, replacement);
+            if (el.htmlFor) el.htmlFor = el.htmlFor.replace(idRegex, replacement);
+
+            if (el.tagName === 'SELECT' && el.name && el.name.endsWith('-despesa_id')) {
+                const options = itemType === 'custo_op' ? despesasOpcoesOp : despesasOpcoesVis;
+                populateSelect(el, options);
+            }
+        });
+        listElement.appendChild(newItem);
+    }
+
+    if (cardBody) {
+        cardBody.addEventListener('click', function(e) {
+            if (e.target && e.target.matches('.add-item')) {
+                const targetId = e.target.dataset.target;
+                const listElement = document.getElementById(targetId);
+                addDynamicItem(listElement);
+            }
+            if (e.target && e.target.matches('.remove-item')) {
+                const item = e.target.closest('.dynamic-item');
+                 if (item) {
+                     item.remove();
+                 }
+            }
+        });
+    }
+
+    function initializeExistingSelects(listElement, options) {
+        if (!listElement) return;
+        listElement.querySelectorAll('.dynamic-item').forEach(item => {
+            const selectElement = item.querySelector('select[name$="-despesa_id"]');
+            if (selectElement) {
+                const currentValue = selectElement.getAttribute('data-current-value') || selectElement.value;
+                populateSelect(selectElement, options);
+                if (currentValue) {
+                    selectElement.value = currentValue;
+                }
+                 selectElement.setAttribute('data-current-value', selectElement.value);
+            }
+        });
+    }
+
+    initializeExistingSelects(custosOpList, despesasOpcoesOp);
+    initializeExistingSelects(custosVisList, despesasOpcoesVis);
+
+    // Adiciona evento de blur para o campo de data de emissão para preencher data de início (exemplo)
+    const dataEmissaoInput = document.querySelector('[name="data_emissao"]');
+    const dataInicioInput = document.querySelector('[name="data_inicio"]');
+    if (dataEmissaoInput && dataInicioInput) {
+        dataEmissaoInput.addEventListener('change', function() {
+            if (!dataInicioInput.value) { // Só preenche se data de início estiver vazia
+                dataInicioInput.value = this.value;
+            }
+        });
+    }
+
+});
+</script>
+{% endblock %}

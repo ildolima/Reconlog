@@ -1,0 +1,26 @@
+
+div class="custo-operacional-item">
+  {{ form.hidden_tag() }}
+  <div class="mb-2">
+    {{ form.despesa_id.label(class="form-label") }}
+    {{ form.despesa_id(class="form-select form-select-sm") }}
+  </div>
+  <div class="mb-2">
+    {{ form.valor.label(class="form-label") }}
+    {{ form.valor(class="form-control form-control-sm") }}
+  </div>
+  <div class="mb-2">
+    {{ form.data.label(class="form-label") }}
+    {{ form.data(class="form-control form-control-sm", type="date") }}
+  </div>
+  <div class="mb-2">
+    {{ form.responsavel.label(class="form-label") }}
+    {{ form.responsavel(class="form-select form-select-sm") }}
+  </div>
+  <div class="mb-2">
+    {{ form.observacao.label(class="form-label") }}
+    {{ form.observacao(class="form-control form-control-sm") }}
+  </div>
+  <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">Remover</button>
+  <hr>
+</div>

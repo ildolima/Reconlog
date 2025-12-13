@@ -1,0 +1,13 @@
+{
+  "completed": "2025-10-13T15:30:26.253511Z",
+  "periodic": true,
+  "started": "2025-10-13T15:30:22.066378Z",
+  "versions": [
+    {
+      "filename": "setuptools-80.9.0-py3-none-any.whl",
+      "found_date": "2025-10-13T15:30:22.331788Z",
+      "release_date": "2025-05-27T00:56:49.000000Z",
+      "source": "periodic"
+    }
+  ]
+}

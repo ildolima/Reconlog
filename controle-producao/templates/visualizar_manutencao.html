@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<style>
+    /* Reaproveitando o estilo da impressão para a tela */
+    .data-label { font-weight: 700; color: #555; font-size: 0.75rem; text-transform: uppercase; display: block; }
+    .data-value { font-size: 0.95rem; font-weight: 600; border-bottom: 1px dotted #ccc; padding-bottom: 2px; min-height: 24px; }
+    .section-title {
+        background-color: #e9ecef; padding: 5px 10px; font-weight: 800; font-size: 0.9rem;
+        text-transform: uppercase; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid #0d6efd;
+    }
+    .info-box { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; min-height: 40px; }
+    .tipo-manut-badge { display: inline-block; padding: 5px 10px; margin-right: 5px; margin-bottom: 5px; border-radius: 15px; border: 1px solid #ccc; background: #fff; font-size: 0.85rem; }
+    .tipo-manut-badge.active { background-color: #d1e7dd; border-color: #0f5132; color: #0f5132; font-weight: bold; }
+</style>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0"><i class="bi bi-eye"></i> {{ title }}</h3>
+        <div>
+            <a href="{{ url_for('editar_manutencao', os_id=os_manut.id) }}" class="btn btn-warning btn-sm"><i class="bi bi-pencil-square"></i> Editar</a>
+            <a href="{{ url_for('imprimir_manutencao', os_id=os_manut.id) }}" target="_blank" class="btn btn-light btn-sm"><i class="bi bi-printer-fill"></i> Imprimir</a>
+            <a href="{{ url_for('lista_manutencao') }}" class="btn btn-secondary btn-sm"><i class="bi bi-arrow-left"></i> Voltar</a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="display-6">OS Nº <span class="text-danger fw-bold">{{ os_manut.numero }}</span></h1>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="text-muted">Abertura: {{ os_manut.data_abertura.strftime('%d/%m/%Y') }} {{ os_manut.hora_abert.strftime('%H:%M') }}</div>
+                {% if os_manut.data_encerramento %}
+                <div class="text-success fw-bold">Encerrada em: {{ os_manut.data_encerramento.strftime('%d/%m/%Y') }}</div>
+                {% else %}
+                <div class="text-warning fw-bold">Status: Aberta</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="section-title">1. Dados da Solicitação</div>
+        <div class="row g-3">
+            <div class="col-md-4"><span class="data-label">Solicitante</span><div class="data-value">{{ os_manut.solicitante }}</div></div>
+            <div class="col-md-4"><span class="data-label">Máquina / Equipamento</span><div class="data-value">{{ os_manut.maq_equip }}</div></div>
+            <div class="col-md-4"><span class="data-label">Área / Setor</span><div class="data-value">{{ os_manut.area_setor }}</div></div>
+            <div class="col-md-12"><span class="data-label">Ocorrência / Defeito</span><div class="data-value">{{ os_manut.ocorrencia or '-' }}</div></div>
+            <div class="col-md-12"><span class="data-label">Parada de Produção?</span><div class="data-value">{{ parada_status }}</div></div>
+        </div>
+
+        <div class="section-title">2. Tipos de Serviço</div>
+        <div class="mb-3">
+            {% set manut_types = [('manut_corretiva', 'Corretiva'), ('manut_preventiva', 'Preventiva'), ('manut_preditiva', 'Preditiva'), ('inspecao', 'Inspeção'), ('melhorias', 'Melhorias'), ('predial', 'Predial'), ('outro', 'Outro')] %}
+            {% for field, label in manut_types %}
+                <span class="tipo-manut-badge {% if os_manut[field] %}active{% endif %}">
+                    <i class="bi {% if os_manut[field] %}bi-check-circle-fill{% else %}bi-circle{% endif %}"></i> {{ label }}
+                </span>
+            {% endfor %}
+        </div>
+
+        <div class="section-title">3. Diagnóstico e Execução</div>
+        <div class="row g-3">
+            <div class="col-md-4"><span class="data-label">Sintoma</span><div class="info-box">{{ os_manut.sintoma or '-' }}</div></div>
+            <div class="col-md-4"><span class="data-label">Causa</span><div class="info-box">{{ os_manut.causa or '-' }}</div></div>
+            <div class="col-md-4"><span class="data-label">Intervenção</span><div class="info-box">{{ os_manut.intervencao or '-' }}</div></div>
+        </div>
+
+        <div class="section-title">4. Apontamentos Técnicos</div>
+        <table class="table table-striped table-hover table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Manutentor</th>
+                    <th class="text-center">Início</th>
+                    <th class="text-center">Término</th>
+                    <th class="text-end">Duração</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in os_manut.apontamentos %}
+                <tr>
+                    <td>{{ item.manutentor }}</td>
+                    <td class="text-center">{{ item.data_inicio.strftime('%d/%m') if item.data_inicio }} {{ item.hora_inicio.strftime('%H:%M') if item.hora_inicio }}</td>
+                    <td class="text-center">{{ item.data_termino.strftime('%d/%m') if item.data_termino }} {{ item.hora_termino.strftime('%H:%M') if item.hora_termino }}</td>
+                    <td class="text-end fw-bold">{{ item.duracao_formatada }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-muted">Nenhum apontamento.</td></tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end fw-bold">Tempo Total:</td>
+                    <td class="text-end fw-bold bg-light">{{ total_horas_gastas }}</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="section-title">5. Materiais e Observações</div>
+        <div class="row g-3">
+            <div class="col-md-6"><span class="data-label">Materiais Utilizados</span><div class="info-box">{{ os_manut.materiais_utilizados or '-' }}</div></div>
+            <div class="col-md-6"><span class="data-label">Materiais Comprados</span><div class="info-box">{{ os_manut.materiais_comprados or '-' }}</div></div>
+            <div class="col-md-12"><span class="data-label">Ficha Técnica</span><div class="info-box">{{ os_manut.ficha_tec or '-' }}</div></div>
+            <div class="col-md-12"><span class="data-label">Observações Gerais</span><div class="info-box">{{ os_manut.obs_manut or '-' }}</div></div>
+        </div>
+
+        <div class="section-title">6. Responsáveis</div>
+        <div class="row text-center mt-3">
+            <div class="col-md-4"><div class="fw-bold">{{ os_manut.assinatura1 or '-' }}</div><small class="text-muted">Solicitante</small></div>
+            <div class="col-md-4"><div class="fw-bold">{{ os_manut.assinatura2 or '-' }}</div><small class="text-muted">Gestor</small></div>
+        </div>
+
+    </div>
+    <div class="card-footer text-end">
+        <a href="{{ url_for('lista_manutencao') }}" class="btn btn-secondary">Voltar para Lista</a>
+    </div>
+</div>
+{% endblock %}

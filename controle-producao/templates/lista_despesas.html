@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h3><i class="bi bi-cash-stack"></i> {{ title }}</h3>
+        <a href="{{ url_for('nova_despesa') }}" class="btn btn-light"><i class="bi bi-plus-square"></i> Nova Despesa</a>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">Descrição</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for despesa in despesas %}
+                    <tr>
+                        <td>{{ despesa.descricao }}</td>
+                        <td>{{ despesa.tipo }}</td>
+                        <td>
+                            {# Links para editar/excluir (implementar rotas se necessário) #}
+                            <a href="#" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil-fill"></i></a>
+                            <a href="#" class="btn btn-sm btn-danger" title="Excluir"><i class="bi bi-trash-fill"></i></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center">Nenhum tipo de despesa cadastrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

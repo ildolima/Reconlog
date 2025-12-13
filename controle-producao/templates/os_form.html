@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .bg-blue-theme { background-color: #f0f7ff; }
+    .fieldset-custom { background-color: #ffffff; border: 1px solid #cce5ff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .legend-custom { color: #0d6efd; font-weight: 700; background-color: #fff; padding: 0 10px; border-radius: 4px; border: 1px solid #cce5ff; }
+    input:disabled, select:disabled, textarea:disabled { background-color: #e9ecef !important; cursor: not-allowed; }
+    input[readonly] { background-color: #f8f9fa; cursor: default; color: #495057; font-weight: bold; }
+    .money-input { font-weight: bold; color: #198754; }
+</style>
+
+<div class="card shadow-sm border-primary">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0"><i class="bi bi-journal-plus"></i> {{ title }}</h3>
+        {% if not current_user.can_edit_general %}
+            {% if current_user.can_see_money %}
+                <span class="badge bg-warning text-dark"><i class="bi bi-pencil-fill"></i> Modo Compras (Apenas Custos)</span>
+            {% else %}
+                <span class="badge bg-secondary"><i class="bi bi-eye-fill"></i> Modo Operador (Visualização)</span>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="card-body bg-blue-theme">
+        <form method="POST" action="" id="formOS" onsubmit="unmaskCurrencyFields()">
+            {{ form.hidden_tag() }}
+
+            {# === 1. CLASSIFICAÇÃO === #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Classificação</legend>
+                <div class="row align-items-center">
+                    <div class="col-md-4 mb-3"><label class="form-label d-block fw-bold">{{ form.fase.label }}</label>{% for subfield in form.fase %}<div class="form-check form-check-inline">{{ subfield(class="form-check-input", disabled=not current_user.can_edit_general) }} {{ subfield.label(class="form-check-label") }}</div>{% endfor %}</div>
+                    <div class="col-md-4 mb-3">{{ form.Tipo_OS.label(class="form-label fw-bold") }} {{ form.Tipo_OS(class="form-select", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-4 mb-3">{{ form.empresa.label(class="form-label fw-bold") }} {{ form.empresa(class="form-select", disabled=not current_user.can_edit_general) }}</div>
+                </div>
+            </fieldset>
+
+            {# === 2. CRONOGRAMA === #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Cronograma</legend>
+                <div class="row">
+                    <div class="col-md-2 mb-3">{{ form.data_emissao.label(class="form-label") }} {{ form.data_emissao(class="form-control", type="date", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-2 mb-3">{{ form.data_inicio.label(class="form-label") }} {{ form.data_inicio(class="form-control", type="date", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-3 mb-3"><label class="form-label">Prev. Término</label> {{ form.data_termino(class="form-control", type="date", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-2 mb-3">{{ form.data_entrega.label(class="form-label") }} {{ form.data_entrega(class="form-control", type="date", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-3 mb-3">{{ form.data_conclusao.label(class="form-label") }} {{ form.data_conclusao(class="form-control", type="date", disabled=not current_user.can_edit_general) }}</div>
+                </div>
+            </fieldset>
+
+            {# === 3. DADOS DO CLIENTE === #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Dados do Cliente</legend>
+                <div class="row">
+                    <div class="col-md-3 mb-3">{{ form.numero.label(class="form-label") }} {{ form.numero(class="form-control fw-bold", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Fantasia</label> {{ form.cliente(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-3 mb-3">{{ form.status.label(class="form-label") }} {{ form.status(class="form-select") }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">{{ form.Razao.label(class="form-label") }} {{ form.Razao(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-4">{{ form.CNPJ.label(class="form-label") }} {{ form.CNPJ(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-4">{{ form.Insc.label(class="form-label") }} {{ form.Insc(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                </div>
+                <div class="bg-light p-3 border rounded mb-3">
+                    <h6 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> Endereço Principal</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">{{ form.endereco.label(class="form-label") }} {{ form.endereco(class="form-control", id="end_logradouro", disabled=not current_user.can_edit_general) }}</div>
+                        <div class="col-md-4 mb-3">{{ form.Bairro.label(class="form-label") }} {{ form.Bairro(class="form-control", id="end_bairro", disabled=not current_user.can_edit_general) }}</div>
+                        <div class="col-md-2 mb-3">{{ form.CEP.label(class="form-label") }} {{ form.CEP(class="form-control", id="end_cep", disabled=not current_user.can_edit_general) }}</div>
+                    </div>
+                </div>
+                <ul class="nav nav-tabs mb-3" id="addressTabs"><li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#faturamento" type="button">💲 Faturamento</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#montagem" type="button">🔨 Montagem</button></li></ul>
+                <div class="tab-content p-3 border border-top-0 rounded-bottom bg-white">
+                    <div class="tab-pane fade show active" id="faturamento">
+                         {% if current_user.can_edit_general %}<div class="d-flex justify-content-end mb-3"><button type="button" class="btn btn-sm btn-outline-primary" onclick="copiarEndereco('fat')">Copiar do Principal</button></div>{% endif %}
+                         <div class="row"><div class="col-md-6 mb-3">{{ form.fat_endereco.label(class="form-label") }} {{ form.fat_endereco(class="form-control", id="fat_logradouro", disabled=not current_user.can_edit_general) }}</div><div class="col-md-4 mb-3">{{ form.fat_bairro.label(class="form-label") }} {{ form.fat_bairro(class="form-control", id="fat_bairro", disabled=not current_user.can_edit_general) }}</div><div class="col-md-2 mb-3">{{ form.fat_cep.label(class="form-label") }} {{ form.fat_cep(class="form-control", id="fat_cep", disabled=not current_user.can_edit_general) }}</div></div>
+                    </div>
+                    <div class="tab-pane fade" id="montagem">
+                         {% if current_user.can_edit_general %}<div class="d-flex justify-content-end mb-3"><button type="button" class="btn btn-sm btn-outline-primary" onclick="copiarEndereco('mont')">Copiar do Principal</button></div>{% endif %}
+                         <div class="row"><div class="col-md-6 mb-3">{{ form.mont_endereco.label(class="form-label") }} {{ form.mont_endereco(class="form-control", id="mont_logradouro", disabled=not current_user.can_edit_general) }}</div><div class="col-md-4 mb-3">{{ form.mont_bairro.label(class="form-label") }} {{ form.mont_bairro(class="form-control", id="mont_bairro", disabled=not current_user.can_edit_general) }}</div><div class="col-md-2 mb-3">{{ form.mont_cep.label(class="form-label") }} {{ form.mont_cep(class="form-control", id="mont_cep", disabled=not current_user.can_edit_general) }}</div></div>
+                    </div>
+                </div>
+            </fieldset>
+
+            {# === 4. CONTRATO (MASCARA APLICADA) === #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Detalhes do Contrato</legend>
+                 <div class="row">
+                     <div class="col-md-3 mb-3">{{ form.tipo_contrato.label(class="form-label") }} {{ form.tipo_contrato(class="form-select", disabled=not current_user.can_edit_general) }}</div>
+
+                    <div class="col-md-3 mb-3">
+                        {{ form.valor.label(class="form-label") }}
+                        {% if current_user.can_edit_general %}
+                            <div class="input-group"><span class="input-group-text">R$</span>{{ form.valor(class="form-control text-end money-mask", type="text") }}</div>
+                        {% elif current_user.can_see_money %}
+                            <div class="input-group"><span class="input-group-text bg-light text-muted">R$</span>{{ form.valor(class="form-control text-end money-mask", type="text", readonly=True) }}</div>
+                        {% else %}
+                            <div class="input-group"><span class="input-group-text bg-secondary text-white"><i class="bi bi-lock-fill"></i></span><input type="text" class="form-control" value="Restrito" disabled></div>
+                            <div style="display:none;">{{ form.valor() }}</div>
+                        {% endif %}
+                    </div>
+                     <div class="col-md-3 mb-3">{{ form.TipoLoc.label(class="form-label") }} {{ form.TipoLoc(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                     <div class="col-md-3 mb-3">{{ form.Modelo.label(class="form-label") }} {{ form.Modelo(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                </div>
+                <div class="row"><div class="col-md-12 mb-3">{{ form.Acessorios.label(class="form-label") }} {{ form.Acessorios(class="form-control", rows="3", disabled=not current_user.can_edit_general) }}</div></div>
+            </fieldset>
+
+            {# ... (Outros campos Responsáveis, Observações mantidos igual) ... #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Responsáveis e Integração</legend>
+                <div class="row">
+                    <div class="col-md-4 mb-3">{{ form.vendedo.label(class="form-label") }} {{ form.vendedo(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                    <div class="col-md-4 mb-3">{{ form.Segtrab.label(class="form-label") }} {{ form.Segtrab(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                     <div class="col-md-4 mb-3">{{ form.integracao.label(class="form-label") }} {{ form.integracao(class="form-control", disabled=not current_user.can_edit_general) }}</div>
+                </div>
+            </fieldset>
+
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Observações Gerais</legend>
+                 <div class="row"><div class="col-md-12 mb-3">{{ form.observacoes.label(class="form-label") }} {{ form.observacoes(class="form-control", rows="3") }}</div><div class="col-md-12 mb-3">{{ form.Obs2.label(class="form-label") }} {{ form.Obs2(class="form-control", rows="2") }}</div></div>
+            </fieldset>
+
+            {# === LOGISTICA (TRAVADO P/ COMPRAS) === #}
+            <fieldset class="border p-3 mb-3 rounded" style="background-color: #e9ecef;">
+                <legend class="float-none w-auto px-3 fw-bold text-primary" style="background: #e9ecef;"><i class="bi bi-truck"></i> Logística de Carregamento</legend>
+                <div id="carregamentos-list">
+                    {% for carga_form in form.carregamentos %}
+                        {{ carga_form.hidden_tag() }}
+                        <div class="row align-items-center mb-3 pb-2 border-bottom dynamic-item" data-type="carga">
+                            <div class="col-md-2 mb-2">{{ carga_form.data.label(class="form-label small") }} {{ carga_form.data(class="form-control form-control-sm", type="date", disabled=not current_user.can_edit_general) }}</div>
+                            <div class="col-md-2 mb-2">{{ carga_form.placa_caminhao.label(class="form-label small") }} {{ carga_form.placa_caminhao(class="form-control form-control-sm", placeholder="ABC-1234", disabled=not current_user.can_edit_general) }}</div>
+                            <div class="col-md-3 mb-2">{{ carga_form.documento_referencia.label(class="form-label small") }} {{ carga_form.documento_referencia(class="form-control form-control-sm", placeholder="Ex: Romaneio 05", disabled=not current_user.can_edit_general) }}</div>
+                            <div class="col-md-4 mb-2">{{ carga_form.observacao.label(class="form-label small") }} {{ carga_form.observacao(class="form-control form-control-sm", placeholder="Obs...", disabled=not current_user.can_edit_general) }}</div>
+                            {% if current_user.can_edit_general %}<div class="col-md-1 mb-2 d-flex align-items-end"><button type="button" class="btn btn-danger btn-sm w-100 remove-item" title="Remover"><i class="bi bi-trash"></i></button></div>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if current_user.can_edit_general %}<button type="button" class="btn btn-outline-primary btn-sm mt-2 add-item" data-target="carregamentos-list"><i class="bi bi-plus-lg"></i> Adicionar Carregamento</button>{% endif %}
+            </fieldset>
+
+            {# === CUSTOS OPERACIONAIS (MÁSCARA + CORREÇÃO ZERAR VALOR) === #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Custos Operacionais</legend>
+                <div id="custos-op-list">
+                    {% for custo_op_form in form.custos_operacionais %}
+                        {{ custo_op_form.hidden_tag() }}
+                        <div class="row align-items-center mb-3 pb-2 border-bottom dynamic-item" data-type="custo_op">
+                            <div class="col-md-3 mb-2">{{ custo_op_form.despesa_id.label(class="form-label small") }} {{ custo_op_form.despesa_id(class="form-select form-select-sm") }}</div>
+
+                            <div class="col-md-2 mb-2">
+                                {{ custo_op_form.valor.label(class="form-label small fw-bold text-primary") }}
+                                {% if current_user.can_see_money %}
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">R$</span>
+                                        {% if current_user.can_edit_predicted %}
+                                            {{ custo_op_form.valor(class="form-control text-end money-mask", type="text") }}
+                                        {% else %}
+                                            {# Para Compras: Classe 'predicted-locked' para identificar e zerar no JS se for nova linha #}
+                                            {{ custo_op_form.valor(class="form-control text-end money-mask predicted-locked", type="text", readonly=True) }}
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <input type="text" class="form-control form-control-sm" value="***" disabled><div style="display:none;">{{ custo_op_form.valor() }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-2 mb-2">
+                                {{ custo_op_form.valor_realizado.label(class="form-label small fw-bold text-success") }}
+                                {% if current_user.can_see_money %}
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">R$</span>
+                                        {{ custo_op_form.valor_realizado(class="form-control text-end money-mask", type="text") }}
+                                    </div>
+                                {% else %}
+                                    <input type="text" class="form-control form-control-sm" value="***" disabled><div style="display:none;">{{ custo_op_form.valor_realizado() }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-2 mb-2">{{ custo_op_form.data.label(class="form-label small") }} {{ custo_op_form.data(class="form-control form-control-sm", type="date") }}</div>
+                            <div class="col-md-2 mb-2">{{ custo_op_form.responsavel.label(class="form-label small") }} {{ custo_op_form.responsavel(class="form-select form-select-sm") }}</div>
+                            <div class="col-md-1 mb-2 d-flex align-items-end"><button type="button" class="btn btn-danger btn-sm w-100 remove-item" title="Remover"><i class="bi bi-trash"></i></button></div>
+                            <div class="col-md-12 mb-2">{{ custo_op_form.observacao(class="form-control form-control-sm", placeholder="Observação...") }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2 add-item" data-target="custos-op-list">Adicionar Custo Operacional</button>
+            </fieldset>
+
+            {# === CUSTOS DE VISITA (MÁSCARA + CORREÇÃO ZERAR VALOR) === #}
+            <fieldset class="border p-3 mb-3 rounded fieldset-custom">
+                <legend class="float-none w-auto px-3 legend-custom">Custos de Visita</legend>
+                 <div id="custos-vis-list">
+                    {% for custo_vis_form in form.custos_visitas %}
+                        {{ custo_vis_form.hidden_tag() }}
+                        <div class="row align-items-center mb-3 pb-2 border-bottom dynamic-item" data-type="custo_vis">
+                             <div class="col-md-3 mb-2">{{ custo_vis_form.despesa_id.label(class="form-label small") }} {{ custo_vis_form.despesa_id(class="form-select form-select-sm") }}</div>
+
+                            <div class="col-md-2 mb-2">
+                                {{ custo_vis_form.valor.label(class="form-label small fw-bold text-primary") }}
+                                {% if current_user.can_see_money %}
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">R$</span>
+                                        {% if current_user.can_edit_predicted %}
+                                            {{ custo_vis_form.valor(class="form-control text-end money-mask", type="text") }}
+                                        {% else %}
+                                            {{ custo_vis_form.valor(class="form-control text-end money-mask predicted-locked", type="text", readonly=True) }}
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <input type="text" class="form-control form-control-sm" value="***" disabled><div style="display:none;">{{ custo_vis_form.valor() }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-2 mb-2">
+                                {{ custo_vis_form.valor_realizado.label(class="form-label small fw-bold text-success") }}
+                                {% if current_user.can_see_money %}
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">R$</span>
+                                        {{ custo_vis_form.valor_realizado(class="form-control text-end money-mask", type="text") }}
+                                    </div>
+                                {% else %}
+                                    <input type="text" class="form-control form-control-sm" value="***" disabled><div style="display:none;">{{ custo_vis_form.valor_realizado() }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-2 mb-2">{{ custo_vis_form.data.label(class="form-label small") }} {{ custo_vis_form.data(class="form-control form-control-sm", type="date") }}</div>
+                            <div class="col-md-2 mb-2">{{ custo_vis_form.responsavel.label(class="form-label small") }} {{ custo_vis_form.responsavel(class="form-select form-select-sm") }}</div>
+                            <div class="col-md-1 mb-2 d-flex align-items-end"><button type="button" class="btn btn-danger btn-sm w-100 remove-item" title="Remover"><i class="bi bi-trash"></i></button></div>
+                            <div class="col-md-12 mb-2">{{ custo_vis_form.observacao(class="form-control form-control-sm", placeholder="Observação...") }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2 add-item" data-target="custos-vis-list">Adicionar Custo de Visita</button>
+            </fieldset>
+
+            <div class="d-grid gap-2 mt-4">
+                {{ form.submit(class="btn btn-primary btn-lg") }}
+                <a href="{{ url_for('lista_os') }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    const despesasOpcoesOp = {{ despesas_op | default([]) | tojson | safe }};
+    const despesasOpcoesVis = {{ despesas_vis | default([]) | tojson | safe }};
+
+    function copiarEndereco(destino) {
+        const campos = [
+            {origem: 'end_logradouro', dest: destino + '_logradouro'},
+            {origem: 'end_bairro', dest: destino + '_bairro'},
+            {origem: 'end_cidade', dest: destino + '_cidade'},
+            {origem: 'end_uf', dest: destino + '_uf'},
+            {origem: 'end_cep', dest: destino + '_cep'}
+        ];
+        campos.forEach(c => {
+            const elOrigem = document.getElementById(c.origem);
+            const elDest = document.getElementById(c.dest);
+            if (elOrigem && elDest && !elDest.disabled) elDest.value = elOrigem.value;
+        });
+        alert("Endereço copiado!");
+    }
+
+    function populateSelect(selectElement, options) {
+        const currentValue = selectElement.value;
+        selectElement.innerHTML = '<option value="">Selecione...</option>';
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option[0];
+            opt.textContent = option[1];
+            selectElement.appendChild(opt);
+        });
+        if (currentValue) selectElement.value = currentValue;
+    }
+
+    // === FUNÇÕES DE MÁSCARA (MOEDA) ===
+    function formatMoney(value) {
+        if (!value) return "";
+        // Remove tudo que não é dígito
+        value = value.replace(/\D/g, "");
+        // Converte para float e divide por 100 para ter os centavos
+        value = (parseFloat(value) / 100).toFixed(2) + "";
+        // Troca ponto por vírgula
+        value = value.replace(".", ",");
+        // Adiciona ponto de milhar
+        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+        return value;
+    }
+
+    function unmaskCurrencyFields() {
+        // Antes de enviar, remove pontos e troca vírgula por ponto para o Python entender
+        document.querySelectorAll('.money-mask').forEach(input => {
+            if (input.value) {
+                input.value = input.value.replace(/\./g, "").replace(",", ".");
+            }
+        });
+        return true;
+    }
+
+    // Aplica a máscara ao digitar
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('money-mask')) {
+            e.target.value = formatMoney(e.target.value);
+        }
+    });
+
+    // Formata valores iniciais ao carregar a página (que vêm do Python como 1000.00)
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.money-mask').forEach(input => {
+            if (input.value) {
+                // Se vier do Python com ponto (1000.50), converte para visual BR
+                let val = parseFloat(input.value).toFixed(2);
+                input.value = val.replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            }
+        });
+    });
+    // ==================================
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const custosOpList = document.getElementById('custos-op-list');
+        const custosVisList = document.getElementById('custos-vis-list');
+
+        function addDynamicItem(listElement) {
+            if (!listElement) return;
+            const items = listElement.getElementsByClassName('dynamic-item');
+            if (items.length === 0) return;
+
+            const templateItem = items[0];
+            let itemType;
+            if (listElement.id === 'custos-op-list') itemType = 'custo_op';
+            else if (listElement.id === 'custos-vis-list') itemType = 'custo_vis';
+            else if (listElement.id === 'carregamentos-list') itemType = 'carga';
+
+            const index = Date.now();
+            const newItem = templateItem.cloneNode(true);
+            newItem.dataset.type = itemType;
+
+            newItem.querySelectorAll('input, select, textarea').forEach(el => {
+                if (!el.disabled && !el.readOnly) {
+                    if (el.type === 'date') el.valueAsDate = new Date();
+                    else if (el.tagName === 'SELECT') {
+                        if (el.name.endsWith('-responsavel')) el.value = 'Reconlog';
+                        else el.selectedIndex = 0;
+                    } else if (el.type !== 'hidden') {
+                        el.value = '';
+                    }
+                }
+                // === CORREÇÃO PARA COMPRAS: ZERAR VALOR PREVISTO ===
+                // Se o campo for 'predicted-locked' (Previsto travado), força 0,00 na nova linha
+                if (el.classList.contains('predicted-locked')) {
+                    el.value = '0,00';
+                }
+
+                el.classList.remove('is-invalid');
+            });
+
+            newItem.querySelectorAll('input, select, textarea, label').forEach(el => {
+                let namePrefix;
+                if (itemType === 'custo_op') namePrefix = 'custos_operacionais';
+                else if (itemType === 'custo_vis') namePrefix = 'custos_visitas';
+                else if (itemType === 'carga') namePrefix = 'carregamentos';
+
+                const regex = new RegExp(`(${namePrefix})-(\\d+|__prefix__)-`);
+                const replacement = `${namePrefix}-${index}-`;
+
+                if (el.name) el.name = el.name.replace(regex, replacement);
+                if (el.id) el.id = el.id.replace(regex, replacement);
+                if (el.htmlFor) el.htmlFor = el.htmlFor.replace(regex, replacement);
+
+                if (itemType !== 'carga' && el.tagName === 'SELECT' && el.name.endsWith('-despesa_id')) {
+                    const options = itemType === 'custo_op' ? despesasOpcoesOp : despesasOpcoesVis;
+                    populateSelect(el, options);
+                }
+            });
+
+            listElement.appendChild(newItem);
+        }
+
+        const cardBody = document.querySelector('.card-body');
+        if (cardBody) {
+            cardBody.addEventListener('click', function(e) {
+                if (e.target && e.target.closest('.add-item')) {
+                    const button = e.target.closest('.add-item');
+                    const targetId = button.dataset.target;
+                    addDynamicItem(document.getElementById(targetId));
+                }
+
+                if (e.target && e.target.closest('.remove-item')) {
+                    const item = e.target.closest('.dynamic-item');
+                    const listElement = item.parentElement;
+                    const items = listElement.getElementsByClassName('dynamic-item');
+                    if (items.length > 1) {
+                        item.remove();
+                    } else {
+                        item.querySelectorAll('input, select, textarea').forEach(input => {
+                            if(!input.disabled && !input.readOnly) {
+                                if(input.type === 'date') input.valueAsDate = new Date();
+                                else if(input.type !== 'hidden') input.value = '';
+                            }
+                        });
+                        alert("Linha limpa.");
+                    }
+                }
+            });
+        }
+
+        function initializeExistingSelects(listElement, options) {
+            if (!listElement) return;
+            listElement.querySelectorAll('.dynamic-item').forEach(item => {
+                const selectElement = item.querySelector('select[name$="-despesa_id"]');
+                if (selectElement) {
+                    const currentValue = selectElement.value;
+                    populateSelect(selectElement, options);
+                    if (currentValue) selectElement.value = currentValue;
+                }
+            });
+        }
+
+        initializeExistingSelects(custosOpList, despesasOpcoesOp);
+        initializeExistingSelects(custosVisList, despesasOpcoesVis);
+    });
+</script>
+{% endblock %}

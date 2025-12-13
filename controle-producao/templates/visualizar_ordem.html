@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h3><i class="bi bi-eye-fill"></i> {{ title }}</h3>
+        <div>
+            <a href="{{ url_for('lista_ordens') }}" class="btn btn-light btn-sm"><i class="bi bi-arrow-left"></i> Voltar</a>
+            <a href="{{ url_for('editar_ordem', ordem_id=ordem.id) }}" class="btn btn-warning btn-sm"><i class="bi bi-pencil-fill"></i> Editar</a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <fieldset class="border p-3 mb-3">
+            <legend class="float-none w-auto px-3">Dados Gerais</legend>
+            <div class="row mb-2">
+                <div class="col-md-3"><strong>Nº Sequencial:</strong> {{ ordem.numero_sequencial }}</div>
+                <div class="col-md-3"><strong>Código OP:</strong> {{ ordem.codigo }}</div>
+                <div class="col-md-6"><strong>OS Associada:</strong> {{ ordem.os.numero }}</div>
+            </div>
+            <hr>
+            <div class="row mb-2">
+                <div class="col-md-4"><strong>Cliente:</strong> {{ ordem.cliente }}</div>
+                <div class="col-md-4"><strong>Departamento:</strong> {{ ordem.departamento }}</div>
+                <div class="col-md-4"><strong>Tipo Contrato:</strong> {{ ordem.tipo_contrato }}</div>
+            </div>
+        </fieldset>
+
+        <fieldset class="border p-3 mb-3">
+            <legend class="float-none w-auto px-3">Detalhes do Produto</legend>
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <strong>Part Number:</strong> {{ ordem.part_number_produto or 'N/A' }}
+                    {% if produto %}
+                        <span class="text-muted"> ({{ produto.descricao }})</span>
+                    {% endif %}
+                </div>
+                <div class="col-md-3"><strong>Quantidade:</strong> {{ ordem.quantidade }}</div>
+                <div class="col-md-3"><strong>Setor:</strong> {{ ordem.setor }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-3"><strong>Largura:</strong> {{ ordem.largura }}</div>
+                <div class="col-md-3"><strong>Comprimento:</strong> {{ ordem.comprimento }}</div>
+                <div class="col-md-3"><strong>Pé Direito:</strong> {{ ordem.pe_direito }}</div>
+                <div class="col-md-3"><strong>Piso:</strong> {{ ordem.piso or 'N/A' }}</div>
+            </div>
+        </fieldset>
+
+        <fieldset class="border p-3 mb-3">
+            <legend class="float-none w-auto px-3">Datas</legend>
+            <div class="row">
+                <div class="col-md-3"><strong>Emissão:</strong> {{ ordem.data_emissao.strftime('%d/%m/%Y') if ordem.data_emissao else '' }}</div>
+                <div class="col-md-3"><strong>Início Previsto:</strong> {{ ordem.data_inicio_previsto.strftime('%d/%m/%Y') if ordem.data_inicio_previsto else '' }}</div>
+                <div class="col-md-3"><strong>Término Previsto:</strong> {{ ordem.data_termino_previsto.strftime('%d/%m/%Y') if ordem.data_termino_previsto else '' }}</div>
+                <div class="col-md-3"><strong>Carregamento:</strong> {{ ordem.data_carregamento.strftime('%d/%m/%Y') if ordem.data_carregamento else '' }}</div>
+            </div>
+        </fieldset>
+
+        {% if ordem.romaneios %}
+        <fieldset class="border p-3 mb-3">
+            <legend class="float-none w-auto px-3">Romaneio</legend>
+            <table class="table table-sm table-bordered">
+                <thead class="table-light"><tr><th>ID Item</th><th>Descrição</th><th>Quantidade</th><th>Matéria Prima</th></tr></thead>
+                <tbody>
+                    {% for item in ordem.romaneios %}
+                    <tr>
+                        <td>{{ item.id_item }}</td>
+                        <td>{{ item.descricao }}</td>
+                        <td>{{ item.quantidade }}</td>
+                        <td>{{ item.materia_prima_utilizada or '' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+        {% endif %}
+
+        {% if ordem.controles_producao %}
+        <fieldset class="border p-3 mb-3">
+            <legend class="float-none w-auto px-3">Controle de Produção</legend>
+            <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Turno</th><th>Processo</th><th>Máquina</th><th>Operador</th>
+                        <th>Início</th><th>Término</th>
+                        <th>Qualidade</th><th>Pausa?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for controle in ordem.controles_producao %}
+                    <tr>
+                        <td>{{ controle.turno or '' }}</td>
+                        <td>{{ controle.processo or '' }}</td>
+                        <td>{{ controle.maquina or '' }}</td>
+                        <td>{{ controle.operador or '' }}</td>
+                        <td>{{ controle.data_inicio.strftime('%d/%m') if controle.data_inicio else '' }} {{ controle.hora_inicio.strftime('%H:%M') if controle.hora_inicio else '' }}</td>
+                        <td>{{ controle.data_termino.strftime('%d/%m') if controle.data_termino else '' }} {{ controle.hora_termino.strftime('%H:%M') if controle.hora_termino else '' }}</td>
+                        <td>{{ controle.qualidade or '' }}</td>
+                        <td>{{ 'Sim' if controle.data_pausa else 'Não' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </fieldset>
+        {% endif %}
+        </div>
+</div>
+{% endblock %}

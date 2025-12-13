@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="bi bi-calendar-range"></i> Cronograma de Obras</h2>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary" onclick="changeView('Day')">Dia</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="changeView('Week')">Semana</button>
+            <button type="button" class="btn btn-outline-secondary active" onclick="changeView('Month')">Mês</button>
+        </div>
+    </div>
+
+    <div class="card mb-3 bg-light border-0">
+        <div class="card-body py-2">
+            <form onsubmit="event.preventDefault(); aplicarFiltros();">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto fw-bold text-muted d-flex align-items-center mb-1">
+                        <i class="bi bi-funnel-fill me-1"></i> Filtros:
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="small text-muted fw-bold">Empresa</label>
+                        <select id="filtroEmpresa" class="form-select form-select-sm">
+                            <option value="">Todas</option>
+                            {% for emp in opcoes_empresas %}
+                                <option value="{{ emp }}">{{ emp }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="small text-muted fw-bold">Serviço</label>
+                        <select id="filtroTipo" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            {% for t in opcoes_tipo_os %}
+                                <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="small text-muted fw-bold">Contrato</label>
+                        <select id="filtroContrato" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            {% for c in opcoes_contratos %}
+                                <option value="{{ c }}">{{ c }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-auto border-start ps-3 ms-1">
+                        <label class="small text-muted fw-bold text-primary">Visualizar De:</label>
+                        <input type="date" id="dataInicio" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-auto">
+                        <label class="small text-muted fw-bold text-primary">Até:</label>
+                        <input type="date" id="dataFim" class="form-control form-control-sm">
+                    </div>
+
+                    <div class="col-auto ms-auto d-flex gap-1">
+                        <button type="submit" class="btn btn-sm btn-success mb-1 fw-bold px-3">
+                            <i class="bi bi-filter"></i> Filtrar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger mb-1" onclick="limparFiltros()">
+                            <i class="bi bi-x-circle"></i> Limpar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div id="gantt-chart" style="overflow-x: auto;"></div>
+
+            <div id="msg-sem-dados" class="alert alert-warning text-center m-3" style="display: none;">
+                <i class="bi bi-exclamation-triangle"></i> Nenhum cronograma encontrado para os filtros selecionados.
+            </div>
+
+            {% if tarefas == '[]' %}
+                <div class="alert alert-info text-center m-3">
+                    Nenhuma OS com datas de início e término definidas encontrada no sistema.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-center small text-muted gap-3 pb-3">
+        <div class="d-flex align-items-center"><span class="badge bg-success me-1 rounded-circle p-1"> </span> Concluída</div>
+        <div class="d-flex align-items-center"><span class="badge bg-warning text-dark me-1 rounded-circle p-1"> </span> Em Andamento</div>
+        <div class="d-flex align-items-center"><span class="badge bg-primary me-1 rounded-circle p-1"> </span> Aberta</div>
+        <div class="d-flex align-items-center"><span class="badge bg-danger me-1 rounded-circle p-1"> </span> Cancelada</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/frappe-gantt/0.6.1/frappe-gantt.min.js"></script>
+
+<style>
+    /* Definição das Cores das Barras */
+    .gantt .bar-green .bar { fill: #198754; }
+    .gantt .bar-green .bar-progress { fill: #146c43; }
+
+    .gantt .bar-orange .bar { fill: #fd7e14; }
+    .gantt .bar-orange .bar-progress { fill: #c85f06; }
+
+    .gantt .bar-blue .bar { fill: #0d6efd; }
+    .gantt .bar-blue .bar-progress { fill: #0a58ca; }
+
+    .gantt .bar-red .bar { fill: #dc3545; }
+
+    /* Ajustes visuais gerais */
+    .gantt-container { height: auto; overflow: visible; }
+
+    /* Estilo do Tooltip (Pop-up ao passar o mouse) */
+    .popup-wrapper {
+        background: #fff;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        color: #333;
+        border-radius: 4px;
+        z-index: 1000;
+        pointer-events: none;
+        padding: 0;
+    }
+</style>
+
+<script>
+    // Dados originais vindos do Python (Jinja2)
+    const tarefasOriginais = {{ tarefas | safe }};
+    let gantt;
+    let modoAtual = 'Month';
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Inicializa o gráfico com todos os dados ao carregar
+        renderizarGrafico(tarefasOriginais);
+    });
+
+    function renderizarGrafico(dados) {
+        const container = document.getElementById("gantt-chart");
+        const msg = document.getElementById("msg-sem-dados");
+
+        container.innerHTML = ''; // Limpa gráfico anterior
+
+        // Se não houver dados após o filtro, exibe mensagem
+        if (dados.length === 0) {
+            msg.style.display = 'block';
+            return;
+        } else {
+            msg.style.display = 'none';
+        }
+
+        // Inicializa o Frappe Gantt
+        gantt = new Gantt("#gantt-chart", dados, {
+            header_height: 50,
+            column_width: 30,
+            step: 24,
+            view_modes: ['Day', 'Week', 'Month'],
+            bar_height: 25,
+            bar_corner_radius: 4,
+            arrow_curve: 5,
+            padding: 20,
+            view_mode: modoAtual,
+            date_format: 'YYYY-MM-DD',
+            language: 'ptBr',
+            custom_popup_html: function(task) {
+                // Lógica para mostrar Datas Reais vs Datas Recortadas
+                // Se a tarefa foi recortada pelo filtro, usamos as propriedades _real_start
+                const inicioReal = task._real_start || task.start;
+                const fimReal = task._real_end || task.end;
+
+                // Formata data para o padrão brasileiro (dd/mm/aaaa)
+                const formatDate = (dateStr) => {
+                    if(!dateStr) return '-';
+                    const parts = dateStr.split('-'); // Espera AAAA-MM-DD
+                    if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    return dateStr;
+                }
+
+                return `
+                    <div class="p-2 text-start" style="width: 240px; font-size: 12px; line-height: 1.4;">
+                        <div class="fw-bold mb-1 border-bottom pb-1 text-primary">${task.name}</div>
+                        <div class="mb-1"><strong>Início Real:</strong> ${formatDate(inicioReal)}</div>
+                        <div class="mb-1"><strong>Fim Real:</strong> ${formatDate(fimReal)}</div>
+                        <div class="mb-1"><strong>Contrato:</strong> ${task._desc_contrato}</div>
+                        <div class="mt-1 pt-1 border-top text-muted small">Empresa: ${task._empresa || 'N/A'}</div>
+                    </div>
+                `;
+            }
+        });
+
+        // Garante que o modo de visualização (Dia/Mês) se mantenha
+        changeView(modoAtual);
+    }
+
+    function aplicarFiltros() {
+        // 1. Captura os valores dos inputs
+        const emp = document.getElementById('filtroEmpresa').value;
+        const tipo = document.getElementById('filtroTipo').value;
+        const cont = document.getElementById('filtroContrato').value;
+        const dataDe = document.getElementById('dataInicio').value;
+        const dataAte = document.getElementById('dataFim').value;
+
+        // 2. Filtra e processa os dados
+        // Usamos .map primeiro para criar cópias limpas e preservar os dados originais
+        let dadosFiltrados = tarefasOriginais.map(t => {
+            // Salva as datas originais em propriedades auxiliares para o Tooltip
+            return { ...t, _real_start: t.start, _real_end: t.end };
+        }).filter(t => {
+            // Lógica de Filtro de Texto (Dropdowns)
+            const matchEmp = emp === "" || t._empresa === emp;
+            const matchTipo = tipo === "" || t._tipo_os === tipo;
+            const matchCont = cont === "" || t._contrato === cont;
+
+            // Lógica de Filtro de Data (Interseção)
+            // A tarefa deve "tocar" o período selecionado
+            let matchData = true;
+            if (dataDe && dataAte) {
+                matchData = (t.start <= dataAte && t.end >= dataDe);
+            } else if (dataDe) {
+                matchData = t.end >= dataDe;
+            } else if (dataAte) {
+                matchData = t.start <= dataAte;
+            }
+
+            return matchEmp && matchTipo && matchCont && matchData;
+        });
+
+        // 3. Recorte Visual (Clipping)
+        // Ajusta o início e fim da barra para caber exatamente no período filtrado
+        if (dataDe || dataAte) {
+            dadosFiltrados = dadosFiltrados.map(t => {
+                let novoStart = t.start;
+                let novoEnd = t.end;
+
+                // Se a tarefa começa antes do filtro "De", corta o começo visual
+                if (dataDe && t.start < dataDe) novoStart = dataDe;
+
+                // Se a tarefa termina depois do filtro "Até", corta o final visual
+                if (dataAte && t.end > dataAte) novoEnd = dataAte;
+
+                return { ...t, start: novoStart, end: novoEnd };
+            });
+        }
+
+        renderizarGrafico(dadosFiltrados);
+    }
+
+    function limparFiltros() {
+        // Reseta todos os campos
+        document.getElementById('filtroEmpresa').value = "";
+        document.getElementById('filtroTipo').value = "";
+        document.getElementById('filtroContrato').value = "";
+        document.getElementById('dataInicio').value = "";
+        document.getElementById('dataFim').value = "";
+
+        // Renderiza tudo novamente
+        renderizarGrafico(tarefasOriginais);
+    }
+
+    function changeView(mode) {
+        modoAtual = mode;
+        if(gantt) {
+            gantt.change_view_mode(mode);
+            // Atualiza visual dos botões Dia/Semana/Mês
+            document.querySelectorAll('.btn-group button').forEach(btn => btn.classList.remove('active'));
+            const map = {'Day': 'Dia', 'Week': 'Semana', 'Month': 'Mês'};
+            const texto = map[mode];
+            document.querySelectorAll('.btn-group button').forEach(btn => {
+                if(btn.textContent === texto) btn.classList.add('active');
+            });
+        }
+    }
+</script>
+{% endblock %}
