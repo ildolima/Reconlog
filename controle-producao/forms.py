@@ -1,11 +1,9 @@
-# forms.py (VERSÃO FINAL COMPLETA)
-
 from datetime import date, datetime, time, timedelta
 from flask_wtf import FlaskForm
 from wtforms import Form, StringField, PasswordField, BooleanField, IntegerField, DecimalField, DateField, TimeField, TextAreaField, SubmitField, FieldList, FormField, SelectField, RadioField
-from wtforms.validators import DataRequired, Optional, Length, InputRequired
+from wtforms.validators import DataRequired, Optional, Length, InputRequired, Email
 
-# ==================== LISTAS DE OPÇÕES (MANUTENÇÃO) ====================
+# ==================== LISTAS DE OPÇÕES (MANUTENÇÃO - COMPLETAS) ====================
 OPCOES_SINTOMAS = [
     ('', 'Selecione um Sintoma...'),
     ('Aquecimento', 'Aquecimento'),
@@ -384,3 +382,70 @@ class UserForm(FlaskForm):
     password = PasswordField('Senha', validators=[Optional(), Length(min=4)])
     role = SelectField('Nível de Acesso', choices=[('operador', 'Operador (Acesso Básico)'), ('compras', 'Compras (Custos)'), ('gerente', 'Gerente (Vê Custos)'), ('admin', 'Admin (Total)')], validators=[DataRequired()])
     submit = SubmitField('Salvar Usuário')
+
+# 1. NOVO FORM PARA CADASTRAR/EDITAR TIPOS
+class TipoFornecedorForm(FlaskForm):
+    descricao = StringField('Descrição do Tipo', validators=[DataRequired(), Length(max=200)])
+    submit = SubmitField('Salvar Tipo')
+
+# 2. ATUALIZAÇÃO DO FORNECEDOR FORM
+class FornecedorForm(FlaskForm):
+    cod_sap = StringField('Cód. SAP', validators=[Optional(), Length(max=20)])
+    razao_social = StringField('Razão Social', validators=[DataRequired(), Length(max=150)])
+    nome_fantasia = StringField('Nome Fantasia', validators=[Optional(), Length(max=100)])
+    
+    # SelectField com coerce=int (pois o valor será o ID 1, 2, 3...)
+    tipo_fornecedor_id = SelectField('Tipo de Fornecedor', coerce=int, validators=[DataRequired(message="Selecione um tipo")])
+
+    documento = StringField('CNPJ / CPF / NIT / NIF', validators=[DataRequired(), Length(max=20)])
+    inscricao_estadual = StringField('Inscrição Estadual', validators=[Optional(), Length(max=20)])
+    email = StringField('E-mail', validators=[Optional(), Email(), Length(max=100)])
+    telefone = StringField('Telefone', validators=[Optional(), Length(max=40)])
+    
+    endereco = StringField('Endereço', validators=[Optional(), Length(max=150)])
+    bairro = StringField('Bairro', validators=[Optional(), Length(max=60)])
+    cep = StringField('CEP', validators=[Optional(), Length(max=10)])
+    cidade = StringField('Cidade', validators=[Optional(), Length(max=60)])
+    uf = SelectField('UF', choices=[('', '-'), ('SP', 'SP'), ('RJ', 'RJ'), ('MG', 'MG'), ('RS', 'RS'), ('PR', 'PR'), ('SC', 'SC'), ('ES', 'ES'), ('GO', 'GO'), ('MT', 'MT'), ('MS', 'MS'), ('DF', 'DF'), ('BA', 'BA'), ('PE', 'PE')], validators=[Optional()])
+    pais = StringField('País', default='Brasil', validators=[Optional(), Length(max=40)])
+
+    submit = SubmitField('Salvar Fornecedor')
+
+# No forms.py (Substitua a classe SolicitacaoItemForm por esta)
+class SolicitacaoItemForm(Form):
+    # Campo Oculto para o ID do Produto
+    produto_id = IntegerField('ID Produto', validators=[Optional()]) 
+    
+    descricao_item = StringField('Descrição do Item', validators=[DataRequired(), Length(max=100)])
+    quantidade = DecimalField('Qtd', validators=[DataRequired()])
+    unidade = SelectField('Un.', choices=[('UN', 'UN'), ('KG', 'KG'), ('LT', 'LT'), ('MT', 'MT')], default='UN')
+    prioridade = SelectField('Prioridade', choices=[('Normal', 'Normal'), ('Alta', 'Alta'), ('Baixa', 'Baixa')], default='Normal')
+
+class SolicitacaoCompraForm(FlaskForm):
+    observacao = TextAreaField('Justificativa / Observação', validators=[Optional()])
+    itens = FieldList(FormField(SolicitacaoItemForm), min_entries=1)
+    submit = SubmitField('Enviar Solicitação') 
+
+# ==================== FORMS DE PEDIDO DE COMPRA ====================
+
+class PedidoItemForm(Form):
+    # O ID do produto vem oculto ou read-only
+    produto_id = IntegerField('ID', validators=[Optional()])
+    descricao = StringField('Descrição', validators=[DataRequired()])
+    quantidade = DecimalField('Qtd', validators=[DataRequired()])
+    unidade = StringField('Un.', validators=[Optional()])
+    valor_unitario = DecimalField('Valor Unit. (R$)', validators=[InputRequired()])
+    # O valor total do item será calculado pelo sistema (qtd * valor)
+
+class PedidoCompraForm(FlaskForm):
+    fornecedor = SelectField('Fornecedor', coerce=int, validators=[DataRequired()])
+    condicao_pagamento = StringField('Condição de Pagamento', validators=[DataRequired(), Length(max=100)], default='28 DDL')
+    prazo_entrega = StringField('Prazo de Entrega', validators=[Optional()], default='Imediato')
+    observacoes = TextAreaField('Observações / Frete', validators=[Optional()])
+    
+    # Lista de itens (preços a preencher)
+    itens = FieldList(FormField(PedidoItemForm), min_entries=1)
+    
+    # Botões de ação
+    submit_salvar = SubmitField('Salvar Cotação')
+    submit_aprovar = SubmitField('Salvar e Aprovar') # A lógica de alçada vai aqui

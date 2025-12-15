@@ -1,13 +1,12 @@
-# app.py (VERSÃO CORRIGIDA - ORDEM DE INICIALIZAÇÃO AJUSTADA)
+# app.py (VERSÃO COMPLETA - SEM CORTES)
 
 import json
-from datetime import date
-from sqlalchemy import func
+from datetime import date, datetime, time, timedelta
+from sqlalchemy import func, extract, or_
 from collections import defaultdict
 import os
 import csv
 from decimal import Decimal, InvalidOperation
-from datetime import date, datetime, timedelta, time
 import click
 from functools import wraps
 
@@ -15,22 +14,26 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from dotenv import load_dotenv
-from sqlalchemy import or_, extract
 
 # ==================== IMPORTAÇÕES DE MODELOS E FORMS ====================
 from models import (
     db, User, OS, OSVersao, OrdemProducao, Romaneio, ControleProducao, Produto,
     Apontamento, ParadaNaoPlanejada, Despesa, CustoOperacional, CustoVisita, Carregamento,
-    OSManutencao, ManutApont
+    OSManutencao, ManutApont, 
+    # Novos Models
+    Fornecedor, SolicitacaoCompra, SolicitacaoItem, PedidoCompra, PedidoItem, TipoFornecedor
 )
+
 from forms import (
     LoginForm, OSForm, OrdemProducaoForm, ControleProducaoForm,
     RomaneioForm, ProdutoForm, ApontamentoForm, ParadaForm,
     DespesaForm, CustoOperacionalForm, CustoVisitaForm, UserForm,
-    OSManutencaoForm, ManutApontForm
+    OSManutencaoForm, ManutApontForm, 
+    # Novos Forms
+    FornecedorForm, SolicitacaoCompraForm, TipoFornecedorForm, PedidoCompraForm
 )
 
-# ==================== INICIALIZAÇÃO DO APP (MOVIDO PARA O TOPO) ====================
+# ==================== INICIALIZAÇÃO DO APP ====================
 load_dotenv()
 
 app = Flask(__name__)
@@ -60,7 +63,6 @@ def load_user(user_id):
 
 # ==================== FILTROS E HELPERS ====================
 
-# Filtro de Moeda (Agora funciona porque 'app' já existe)
 @app.template_filter('format_currency')
 def format_currency(value):
     if value is None:
@@ -682,6 +684,7 @@ def gerar_revisao(os_id):
         flash(f'Erro ao gerar revisão: {e}', 'danger')
     return redirect(url_for('visualizar_os', os_id=os_id))
 
+# --- ROTA QUE ESTAVA FALTANDO: CRONOGRAMA ---
 @app.route('/cronograma')
 @login_required
 def cronograma():
@@ -693,21 +696,21 @@ def cronograma():
 
     opcoes_empresas = sorted(list(set([os.empresa for os in ordens if os.empresa])))
     opcoes_tipo_os = sorted(list(set([os.Tipo_OS for os in ordens if os.Tipo_OS])))
-    opcoes_contratos = sorted(list(set([os.tipo_contrato for os in ordens if os.tipo_contrato])))
+    
+    # Tratamento seguro para tipo_contrato (pode ser None)
+    contratos = [os.tipo_contrato for os in ordens if os.tipo_contrato]
+    opcoes_contratos = sorted(list(set(contratos)))
 
     tarefas_gantt = []
     for os_obj in ordens:
         cor = 'bar-blue'
         progress = 0
         if os_obj.status == 'Concluída':
-            cor = 'bar-green'
-            progress = 100
+            cor = 'bar-green'; progress = 100
         elif os_obj.status == 'Em Andamento':
-            cor = 'bar-orange'
-            progress = 50
+            cor = 'bar-orange'; progress = 50
         elif os_obj.status == 'Cancelada':
-            cor = 'bar-red'
-            progress = 100
+            cor = 'bar-red'; progress = 100
 
         tipo_destaque = f"[{os_obj.Tipo_OS.upper()}]" if os_obj.Tipo_OS else "[OS]"
         nome_tarefa = f"{tipo_destaque} {os_obj.cliente} (#{os_obj.numero})"
@@ -721,8 +724,7 @@ def cronograma():
             'custom_class': cor,
             '_empresa': os_obj.empresa or '',
             '_tipo_os': os_obj.Tipo_OS or '',
-            '_contrato': os_obj.tipo_contrato or '',
-            '_desc_contrato': os_obj.tipo_contrato or 'Não informado'
+            '_contrato': os_obj.tipo_contrato or ''
         })
 
     return render_template('gantt.html',
@@ -1083,8 +1085,6 @@ def search_produtos():
 @app.route('/manutencao/nova', methods=['GET', 'POST'])
 @login_required
 def nova_manutencao():
-    from models import OSManutencao, ManutApont
-    from forms import OSManutencaoForm
     form = OSManutencaoForm()
     ultimo_os = OSManutencao.query.order_by(OSManutencao.id.desc()).first()
     proximo_numero = str(int(ultimo_os.numero) + 1) if ultimo_os and ultimo_os.numero.isdigit() else "1"
@@ -1110,8 +1110,6 @@ def nova_manutencao():
 @app.route('/manutencao/<int:os_id>/editar', methods=['GET', 'POST'])
 @login_required
 def editar_manutencao(os_id):
-    from models import OSManutencao, ManutApont
-    from forms import OSManutencaoForm
     os_obj = OSManutencao.query.get_or_404(os_id)
     if request.method == 'POST': form = OSManutencaoForm(request.form, obj=os_obj)
     else: form = OSManutencaoForm(obj=os_obj)
@@ -1137,14 +1135,12 @@ def editar_manutencao(os_id):
 @app.route('/manutencao')
 @login_required
 def lista_manutencao():
-    from models import OSManutencao
     todas_as_os = OSManutencao.query.order_by(OSManutencao.data_abertura.desc()).all()
     return render_template('lista_manutencao.html', lista_os=todas_as_os, title="Ordens de Serviço de Manutenção")
 
 @app.route('/manutencao/<int:os_id>/visualizar')
 @login_required
 def visualizar_manutencao(os_id):
-    from models import OSManutencao, ManutApont
     os_manut = OSManutencao.query.options(db.joinedload(OSManutencao.apontamentos)).get_or_404(os_id)
     parada_status = 'Sim' if os_manut.parada == 'Sim' else 'Não'
     total_segundos = 0
@@ -1168,7 +1164,6 @@ def visualizar_manutencao(os_id):
 @app.route('/manutencao/<int:os_id>/imprimir')
 @login_required
 def imprimir_manutencao(os_id):
-    from models import OSManutencao, ManutApont
     os_manut = OSManutencao.query.options(db.joinedload(OSManutencao.apontamentos)).get_or_404(os_id)
     parada_status = 'Sim' if os_manut.parada == 'Sim' else 'Não'
     total_segundos = 0
@@ -1193,7 +1188,6 @@ def imprimir_manutencao(os_id):
 @login_required
 @role_required('admin')
 def excluir_manutencao(os_id):
-    from models import OSManutencao
     os_obj = OSManutencao.query.get_or_404(os_id)
     try:
         db.session.delete(os_obj)
@@ -1204,7 +1198,9 @@ def excluir_manutencao(os_id):
         flash(f'Erro ao excluir a OS: {e}', 'danger')
     return redirect(url_for('lista_manutencao'))
 
-# --- ROTAS DE DESPESAS ---
+# =============================================================
+# ROTAS DE DESPESAS
+# =============================================================
 @app.route('/despesas')
 @login_required
 def lista_despesas():
@@ -1228,6 +1224,274 @@ def nova_despesa():
             db.session.rollback()
             flash(f'Erro ao criar despesa: {e}.', 'danger')
     return render_template('despesa_form.html', form=form, title="Nova Despesa")
+
+# =============================================================
+# MÓDULO DE COMPRAS - CADASTROS (NOVAS FUNCIONALIDADES)
+# =============================================================
+
+# --- ROTA PARA GERENCIAR TIPOS DE FORNECEDOR ---
+@app.route('/configuracoes/tipos-fornecedor', methods=['GET', 'POST'])
+@login_required
+def gerenciar_tipos_fornecedor():
+    form = TipoFornecedorForm()
+    if form.validate_on_submit():
+        novo_tipo = TipoFornecedor(descricao=form.descricao.data)
+        db.session.add(novo_tipo)
+        db.session.commit()
+        flash('Novo tipo de fornecedor cadastrado!', 'success')
+        return redirect(url_for('gerenciar_tipos_fornecedor'))
+    
+    tipos = TipoFornecedor.query.order_by(TipoFornecedor.descricao).all()
+    return render_template('lista_tipos_fornecedor.html', form=form, tipos=tipos)
+
+# --- ROTAS DE FORNECEDOR ---
+
+@app.route('/fornecedores')
+@login_required
+def lista_fornecedores():
+    fornecedores = Fornecedor.query.order_by(Fornecedor.razao_social).all()
+    return render_template('lista_fornecedores.html', fornecedores=fornecedores)
+
+@app.route('/fornecedor/novo', methods=['GET', 'POST'])
+@login_required
+def novo_fornecedor():
+    form = FornecedorForm()
+    
+    # POPULAR O SELECT FIELD COM DADOS DO BANCO
+    form.tipo_fornecedor_id.choices = [(t.id, t.descricao) for t in TipoFornecedor.query.order_by(TipoFornecedor.descricao).all()]
+    form.tipo_fornecedor_id.choices.insert(0, (0, 'Selecione um tipo...'))
+
+    if form.validate_on_submit():
+        if form.tipo_fornecedor_id.data == 0:
+            flash('Selecione um tipo válido.', 'danger')
+        else:
+            novo = Fornecedor(
+                cod_sap=form.cod_sap.data,
+                razao_social=form.razao_social.data,
+                nome_fantasia=form.nome_fantasia.data,
+                tipo_fornecedor_id=form.tipo_fornecedor_id.data,
+                documento=form.documento.data,
+                inscricao_estadual=form.inscricao_estadual.data,
+                email=form.email.data,
+                telefone=form.telefone.data,
+                endereco=form.endereco.data,
+                bairro=form.bairro.data,
+                cep=form.cep.data,
+                cidade=form.cidade.data,
+                uf=form.uf.data,
+                pais=form.pais.data
+            )
+            db.session.add(novo)
+            db.session.commit()
+            flash('Fornecedor cadastrado com sucesso!', 'success')
+            return redirect(url_for('lista_fornecedores'))
+            
+    return render_template('editar_fornecedor.html', form=form, titulo='Novo Fornecedor')
+
+@app.route('/fornecedor/editar/<int:id>', methods=['GET', 'POST'])
+@login_required
+def editar_fornecedor(id):
+    fornecedor = Fornecedor.query.get_or_404(id)
+    form = FornecedorForm(obj=fornecedor)
+    
+    # POPULAR O SELECT (Igual ao cadastro)
+    form.tipo_fornecedor_id.choices = [(t.id, t.descricao) for t in TipoFornecedor.query.order_by(TipoFornecedor.descricao).all()]
+    
+    if request.method == 'GET':
+        # Pré-selecionar o valor atual
+        form.tipo_fornecedor_id.data = fornecedor.tipo_fornecedor_id
+
+    if form.validate_on_submit():
+        form.populate_obj(fornecedor)
+        db.session.commit()
+        flash('Fornecedor atualizado!', 'success')
+        return redirect(url_for('lista_fornecedores'))
+        
+    return render_template('editar_fornecedor.html', form=form, titulo='Editar Fornecedor')
+
+# --- API CRÍTICA PARA O BOTÃO "+" FUNCIONAR NO MODAL ---
+@app.route('/api/tipos-fornecedor/novo', methods=['POST'])
+@login_required
+def api_novo_tipo_fornecedor():
+    data = request.get_json()
+    descricao = data.get('descricao')
+    
+    if not descricao:
+        return jsonify({'success': False, 'error': 'Descrição vazia'}), 400
+        
+    try:
+        existe = TipoFornecedor.query.filter_by(descricao=descricao).first()
+        if existe:
+            return jsonify({'success': False, 'error': 'Tipo já existe'}), 400
+
+        novo = TipoFornecedor(descricao=descricao)
+        db.session.add(novo)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'id': novo.id, 
+            'descricao': novo.descricao
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# =============================================================
+# MÓDULO DE SOLICITAÇÕES DE COMPRA (Adicione no app.py)
+# =============================================================
+
+@app.route('/solicitacoes')
+@login_required
+def lista_solicitacoes():
+    solicitacoes = SolicitacaoCompra.query.order_by(SolicitacaoCompra.id.desc()).all()
+    return render_template('lista_solicitacoes.html', solicitacoes=solicitacoes)
+
+@app.route('/solicitacoes/nova', methods=['GET', 'POST'])
+@login_required
+def nova_solicitacao():
+    form = SolicitacaoCompraForm()
+    
+    # Se for GET e não tiver itens, adiciona um vazio para aparecer o campo
+    if request.method == 'GET' and not form.itens.entries:
+        form.itens.append_entry()
+
+    if form.validate_on_submit():
+        try:
+            nova_sol = SolicitacaoCompra(
+                user_id=current_user.id,
+                observacao=form.observacao.data,
+                status='Pendente'
+            )
+            db.session.add(nova_sol)
+            db.session.flush() # Gera o ID da solicitação
+
+            # Salvar os Itens
+            for item_form in form.itens:
+                if item_form.descricao_item.data and item_form.quantidade.data:
+                    novo_item = SolicitacaoItem(
+                        solicitacao_id=nova_sol.id,
+                        produto_id=item_form.produto_id.data if item_form.produto_id.data else None,                        
+                        descricao_item=item_form.descricao_item.data,
+                        quantidade=item_form.quantidade.data,
+                        unidade=item_form.unidade.data,
+                        prioridade=item_form.prioridade.data
+                    )
+                    db.session.add(novo_item)
+            
+            db.session.commit()
+            flash(f'Solicitação #{nova_sol.id} criada com sucesso!', 'success')
+            return redirect(url_for('lista_solicitacoes'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao criar solicitação: {e}', 'danger')
+            print(f"Erro Solicitação: {e}")
+
+    return render_template('nova_solicitacao.html', form=form)
+
+@app.route('/solicitacoes/<int:id>/visualizar')
+@login_required
+def visualizar_solicitacao(id):
+    solicitacao = SolicitacaoCompra.query.get_or_404(id)
+    return render_template('visualizar_solicitacao.html', solicitacao=solicitacao)
+
+# =============================================================
+# MÓDULO DE PEDIDOS E COTAÇÕES (Adicione ao final do app.py)
+# =============================================================
+
+@app.route('/solicitacoes/<int:solicitacao_id>/gerar_pedido', methods=['GET', 'POST'])
+@login_required
+def gerar_pedido(solicitacao_id):
+    solicitacao = SolicitacaoCompra.query.get_or_404(solicitacao_id)
+    form = PedidoCompraForm()
+    
+    # Preenche o Dropdown de Fornecedores
+    form.fornecedor.choices = [(f.id, f.razao_social) for f in Fornecedor.query.order_by(Fornecedor.razao_social).all()]
+    
+    # --- MÉTODO GET: Preenche o formulário com dados da Solicitação ---
+    if request.method == 'GET':
+        # Se for a primeira vez abrindo, copia os itens da solicitação
+        for item_sol in solicitacao.itens:
+            # Adiciona uma linha no formulário para cada item
+            form.itens.append_entry({
+                'produto_id': item_sol.produto_id,
+                'descricao': item_sol.descricao_item,
+                'quantidade': item_sol.quantidade,
+                'unidade': item_sol.unidade,
+                'valor_unitario': Decimal('0.00') # Começa zerado para obrigar cotação
+            })
+
+    # --- MÉTODO POST: Salvar ou Aprovar ---
+    if form.validate_on_submit():
+        try:
+            # 1. Gera número do pedido (AnoMesDia-HoraMinuto) para ser único
+            num_pedido = datetime.now().strftime('%Y%m%d-%H%M%S')
+            
+            # 2. Calcula o Valor Total
+            total_pedido = Decimal('0.00')
+            for item in form.itens:
+                subtotal = item.quantidade.data * item.valor_unitario.data
+                total_pedido += subtotal
+
+            # 3. Define Status Inicial
+            status_pedido = 'Em Cotação' # Padrão
+            data_aprov = None
+            aprovador_id = None
+
+            # 4. LÓGICA DE ALÇADA (Se clicou em "Salvar e Aprovar")
+            if form.submit_aprovar.data:
+                limite_alcada = Decimal('5000.00') # Exemplo: 5 mil reais
+                eh_gerente = current_user.role in ['admin', 'gerente']
+                
+                if total_pedido > limite_alcada and not eh_gerente:
+                    flash(f'Valor R$ {total_pedido:,.2f} excede sua alçada. Pedido salvo como "Aguardando Aprovação".', 'warning')
+                    status_pedido = 'Aguardando Aprovação'
+                else:
+                    status_pedido = 'Aprovado'
+                    data_aprov = datetime.now()
+                    aprovador_id = current_user.id
+                    flash('Pedido Aprovado com sucesso!', 'success')
+
+            # 5. Salva no Banco
+            novo_pedido = PedidoCompra(
+                numero_pedido=num_pedido,
+                solicitacao_origem_id=solicitacao.id,
+                fornecedor_id=form.fornecedor.data,
+                condicao_pagamento=form.condicao_pagamento.data,
+                prazo_entrega=form.prazo_entrega.data,
+                observacoes=form.observacoes.data,
+                valor_total=total_pedido,
+                status=status_pedido,
+                aprovado_por_id=aprovador_id,
+                data_aprovacao=data_aprov
+            )
+            db.session.add(novo_pedido)
+            db.session.flush()
+
+            # 6. Salva os Itens do Pedido
+            for item_form in form.itens:
+                total_item = item_form.quantidade.data * item_form.valor_unitario.data
+                db.session.add(PedidoItem(
+                    pedido_id=novo_pedido.id,
+                    descricao=item_form.descricao.data,
+                    quantidade=item_form.quantidade.data,
+                    valor_unitario=item_form.valor_unitario.data,
+                    valor_total_item=total_item
+                ))
+            
+            # 7. Atualiza a Solicitação original
+            solicitacao.status = 'Em Pedido'
+            
+            db.session.commit()
+            return redirect(url_for('lista_solicitacoes')) # Depois mudaremos para lista de pedidos
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao gerar pedido: {e}', 'danger')
+            print(e)
+
+    return render_template('novo_pedido.html', form=form, solicitacao=solicitacao)
+
 
 # ==============================================================================
 # COMANDOS CLI
@@ -1259,6 +1523,37 @@ def create_user_command():
             except Exception as e:
                 db.session.rollback()
                 print(f"Erro ao criar usuário: {e}")
+
+@app.cli.command('seed-tipos')
+def seed_tipos():
+    """Popula a tabela de tipos de fornecedor com os dados padrão."""
+    lista_padrao = [
+        'Fabricante e Distribuidor (Matéria Prima/Material de Processo)',
+        'Fabricante e Distribuidor (Comércio Varejista, Revenda e Distribuição - MRO)',
+        'Prestador de Serviço (Ambiente Externo)',
+        'Prestador de Serviço (Ambiente Interno)',
+        'Prestador de Serviço Específico de Advocacia/Treinamento/Consultoria',
+        'Prestador de Serviço Pessoa Física',
+        'Prestador de Serviço de Controle de Pragas e Vetores',
+        'Locação sem Mão de Obra',
+        'Fornecedor de Produtos Químicos Controlados',
+        'Tratamento e Destinação de Resíduos',
+        'Transportador - Cargas/Resíduos Perigosos',
+        'Transportador - Interestadual Perigosos',
+        'Transportador - Resíduos Não Perigosos',
+        'Transportador - Cargas Não Perigosas'
+    ]
+    with app.app_context():
+        # Verifica se a tabela existe antes de inserir
+        try:
+            for item in lista_padrao:
+                existe = TipoFornecedor.query.filter_by(descricao=item).first()
+                if not existe:
+                    db.session.add(TipoFornecedor(descricao=item))
+            db.session.commit()
+            print("Tipos de fornecedor cadastrados com sucesso!")
+        except Exception as e:
+            print(f"Erro ao popular tipos: {e}")
 
 @app.cli.command('import-products')
 @click.argument('filename')

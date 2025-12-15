@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Gerar Pedido de Compra</h3>
+        <span class="badge bg-secondary">Ref. Solicitação #{{ solicitacao.id }}</span>
+    </div>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light fw-bold">Dados do Fornecedor e Condições</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        {{ form.fornecedor.label(class="form-label") }}
+                        {{ form.fornecedor(class="form-select") }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.condicao_pagamento.label(class="form-label") }}
+                        {{ form.condicao_pagamento(class="form-control") }}
+                    </div>
+                    <div class="col-md-3">
+                        {{ form.prazo_entrega.label(class="form-label") }}
+                        {{ form.prazo_entrega(class="form-control") }}
+                    </div>
+                    <div class="col-md-12">
+                        {{ form.observacoes.label(class="form-label") }}
+                        {{ form.observacoes(class="form-control", rows="2", placeholder="Ex: Frete CIF, Entregar na portaria 2...") }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between">
+                <span>Itens e Valores</span>
+                <span id="display-total-geral">Total Estimado: R$ 0,00</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40%">Descrição</th>
+                            <th style="width: 10%">Qtd</th>
+                            <th style="width: 10%">Un.</th>
+                            <th style="width: 20%">Valor Unit. (R$)</th>
+                            <th style="width: 20%">Subtotal (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in form.itens %}
+                        <tr class="linha-item">
+                            {{ item.produto_id(class="d-none") }}
+                            
+                            <td>
+                                {{ item.descricao(class="form-control", readonly=True) }}
+                            </td>
+                            <td>
+                                {{ item.quantidade(class="form-control text-center input-qtd", readonly=True) }}
+                            </td>
+                            <td>
+                                {{ item.unidade(class="form-control text-center", readonly=True, style="border:none; background:transparent;") }}
+                            </td>
+                            <td>
+                                {{ item.valor_unitario(class="form-control input-valor", placeholder="0,00") }}
+                            </td>
+                            <td class="text-end fw-bold text-primary display-subtotal">
+                                R$ 0,00
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mb-5">
+            <a href="{{ url_for('lista_solicitacoes') }}" class="btn btn-outline-secondary">Cancelar</a>
+            
+            {{ form.submit_salvar(class="btn btn-primary") }}
+            
+            {{ form.submit_aprovar(class="btn btn-success") }}
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const linhas = document.querySelectorAll('.linha-item');
+    const displayGeral = document.getElementById('display-total-geral');
+
+    function calcular() {
+        let totalGeral = 0;
+
+        linhas.forEach(linha => {
+            const qtdInput = linha.querySelector('.input-qtd');
+            const valorInput = linha.querySelector('.input-valor');
+            const subtotalDisplay = linha.querySelector('.display-subtotal');
+
+            // Pega valores (tratando virgula como ponto se necessario)
+            const qtd = parseFloat(qtdInput.value) || 0;
+            const valor = parseFloat(valorInput.value) || 0;
+
+            const subtotal = qtd * valor;
+            totalGeral += subtotal;
+
+            // Atualiza na tela
+            subtotalDisplay.innerText = subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        });
+
+        displayGeral.innerText = "Total Estimado: " + totalGeral.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    // Escuta eventos de digitação
+    document.querySelectorAll('.input-valor').forEach(input => {
+        input.addEventListener('input', calcular);
+    });
+
+    // Calcula uma vez ao carregar
+    calcular();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3>Nova Solicitação de Compra</h3>
+        <a href="{{ url_for('lista_solicitacoes') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+
+    <form method="POST" autocomplete="off">
+        {{ form.hidden_tag() }}
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="mb-3">
+                    {{ form.observacao.label(class="form-label fw-bold") }}
+                    {{ form.observacao(class="form-control", rows="2", placeholder="Ex: Material para manutenção da máquina de solda...") }}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light fw-bold">
+                Itens da Solicitação
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 50%;">Descrição do Item / Produto</th>
+                            <th style="width: 15%;">Qtd</th>
+                            <th style="width: 15%;">Un.</th>
+                            <th style="width: 20%;">Prioridade</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item_form in form.itens %}
+                        <tr>
+                            <td class="position-relative">
+                                {{ item_form.produto_id(class="produto-id-hidden") }}
+                                
+                                {{ item_form.descricao_item(class="form-control busca-produto", placeholder="Digite para pesquisar...", autocomplete="off") }}
+                                
+                                <div class="list-group position-absolute w-100 search-results shadow" style="z-index: 1000; display: none; top: 100%;"></div>
+                            </td>
+                            <td>{{ item_form.quantidade(class="form-control") }}</td>
+                            <td>{{ item_form.unidade(class="form-select campo-unidade") }}</td>
+                            <td>{{ item_form.prioridade(class="form-select") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="p-3 bg-light">
+                    <small class="text-muted"><i class="bi bi-info-circle"></i> Comece a digitar o nome do produto ou Part Number para buscar no cadastro.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2">
+            {{ form.submit(class="btn btn-primary btn-lg") }}
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const inputsBusca = document.querySelectorAll('.busca-produto');
+
+    inputsBusca.forEach(input => {
+        const wrapper = input.parentElement;
+        const resultsContainer = wrapper.querySelector('.search-results');
+        const hiddenIdInput = wrapper.querySelector('.produto-id-hidden');
+        
+        // Acha o campo de unidade na mesma linha (tr)
+        const row = input.closest('tr');
+        const unidadeSelect = row.querySelector('.campo-unidade');
+
+        // Evento ao digitar
+        input.addEventListener('input', function() {
+            const query = this.value;
+            
+            // Limpa ID se o usuário mudou o texto (para evitar ID errado com texto novo)
+            hiddenIdInput.value = '';
+
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            // Chama a API que já criamos
+            fetch(`/api/produtos/search?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    resultsContainer.innerHTML = '';
+                    
+                    if (data.length > 0) {
+                        data.forEach(prod => {
+                            const item = document.createElement('a');
+                            item.classList.add('list-group-item', 'list-group-item-action');
+                            item.style.cursor = 'pointer';
+                            
+                            // Monta o texto: [PartNumber] Descrição
+                            const textoExibicao = `<strong>${prod.part_number}</strong> - ${prod.descricao}`;
+                            item.innerHTML = textoExibicao;
+
+                            // Ao clicar no item
+                            item.addEventListener('click', function() {
+                                input.value = prod.descricao; // Preenche o nome
+                                hiddenIdInput.value = prod.id; // Guarda o ID
+                                
+                                // Tenta selecionar a unidade automaticamente
+                                if(prod.unidade && unidadeSelect) {
+                                    // Verifica se a unidade existe no select, se não, ignora
+                                    for (let i = 0; i < unidadeSelect.options.length; i++) {
+                                        if (unidadeSelect.options[i].value === prod.unidade) {
+                                            unidadeSelect.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                resultsContainer.style.display = 'none';
+                            });
+
+                            resultsContainer.appendChild(item);
+                        });
+                        resultsContainer.style.display = 'block';
+                    } else {
+                        resultsContainer.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error("Erro na busca:", err));
+        });
+
+        // Fechar lista se clicar fora
+        document.addEventListener('click', function(e) {
+            if (!wrapper.contains(e.target)) {
+                resultsContainer.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

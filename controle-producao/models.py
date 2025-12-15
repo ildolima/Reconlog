@@ -241,7 +241,7 @@ class Produto(db.Model):
     descricao = db.Column(db.String(40), nullable=False)
     tipo_de_material = db.Column(db.String(15), nullable=True)
     custo = db.Column(db.Numeric(15, 3), nullable=False, default=Decimal('0.0'))
-
+    unidade = db.Column(db.String(10), default='UN')
     def to_dict(self):
         return {
             'id': self.id,
@@ -249,7 +249,8 @@ class Produto(db.Model):
             'sku': self.sku,
             'descricao': self.descricao,
             'tipo_de_material': self.tipo_de_material,
-            'custo': str(self.custo)
+            'custo': str(self.custo),
+            'unidade': self.unidade
         }
 
 class ControleProducao(db.Model):
@@ -351,3 +352,104 @@ class ManutApont(db.Model):
     hora_inicio = db.Column(db.Time, nullable=True)
     data_termino = db.Column(db.Date, nullable=True)
     hora_termino = db.Column(db.Time, nullable=True)
+
+# ==============================================================================
+# MÓDULO DE COMPRAS E SUPRIMENTOS (Adicione isto ao final do models.py)
+# ==============================================================================
+
+class TipoFornecedor(db.Model):
+    __tablename__ = 'tipo_fornecedor'
+    id = db.Column(db.Integer, primary_key=True)
+    descricao = db.Column(db.String(200), unique=True, nullable=False)
+    
+    # Relacionamento: Um tipo pode ter vários fornecedores
+    fornecedores = db.relationship('Fornecedor', backref='tipo_relacao', lazy=True)
+
+    def __repr__(self):
+        return self.descricao
+
+class Fornecedor(db.Model):
+    __tablename__ = 'fornecedor'
+    id = db.Column(db.Integer, primary_key=True)
+    
+    # Classificação (Ligação com a tabela acima)
+    tipo_fornecedor_id = db.Column(db.Integer, db.ForeignKey('tipo_fornecedor.id'), nullable=False)
+    
+    # Identificação
+    cod_sap = db.Column(db.String(20), nullable=True)
+    razao_social = db.Column(db.String(150), nullable=False)
+    nome_fantasia = db.Column(db.String(100), nullable=True)
+    documento = db.Column(db.String(20), nullable=True) # CNPJ/CPF
+    inscricao_estadual = db.Column(db.String(20), nullable=True)
+    
+    # Contato
+    email = db.Column(db.String(100), nullable=True)
+    telefone = db.Column(db.String(40), nullable=True)
+    
+    # Endereço
+    endereco = db.Column(db.String(150), nullable=True)
+    bairro = db.Column(db.String(60), nullable=True)
+    cep = db.Column(db.String(10), nullable=True)
+    cidade = db.Column(db.String(60), nullable=True)
+    uf = db.Column(db.String(2), nullable=True)
+    pais = db.Column(db.String(40), default='Brasil', nullable=True)
+    
+    # Relacionamento com Pedidos (Futuro)
+    pedidos = db.relationship('PedidoCompra', backref='fornecedor', lazy=True)
+
+class SolicitacaoCompra(db.Model):
+    __tablename__ = 'solicitacao_compra'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    data_solicitacao = db.Column(db.Date, default=date.today, nullable=False)
+    status = db.Column(db.String(20), default='Pendente') # Pendente, Aprovada, Recusada, Em Pedido
+    observacao = db.Column(db.Text, nullable=True)
+    
+    # Relacionamentos
+    itens = db.relationship('SolicitacaoItem', backref='solicitacao', lazy=True, cascade="all, delete-orphan")
+    usuario = db.relationship('User', backref='solicitacoes')
+
+class SolicitacaoItem(db.Model):
+    __tablename__ = 'solicitacao_item'
+    id = db.Column(db.Integer, primary_key=True)
+    solicitacao_id = db.Column(db.Integer, db.ForeignKey('solicitacao_compra.id'), nullable=False)
+    produto_id = db.Column(db.Integer, db.ForeignKey('produto.id'), nullable=True) # Opcional: pode ser item avulso
+    descricao_item = db.Column(db.String(100), nullable=False)
+    quantidade = db.Column(db.Numeric(10, 2), nullable=False)
+    unidade = db.Column(db.String(10), default='UN')
+    prioridade = db.Column(db.String(10), default='Normal')
+
+class PedidoCompra(db.Model):
+    __tablename__ = 'pedido_compra'
+    id = db.Column(db.Integer, primary_key=True)
+    numero_pedido = db.Column(db.String(20), unique=True, nullable=False)
+    
+    # De onde veio esse pedido? (Rastreabilidade)
+    solicitacao_origem_id = db.Column(db.Integer, db.ForeignKey('solicitacao_compra.id'), nullable=True)
+    
+    fornecedor_id = db.Column(db.Integer, db.ForeignKey('fornecedor.id'), nullable=False)
+    data_emissao = db.Column(db.Date, default=date.today)
+    
+    # Status: 'Em Cotação', 'Aguardando Aprovação', 'Aprovado', 'Reprovado', 'Enviado'
+    status = db.Column(db.String(30), default='Em Cotação')
+    
+    valor_total = db.Column(db.Numeric(10, 2), default=Decimal('0.00'))
+    observacoes = db.Column(db.Text, nullable=True) # Condições de pgto, entrega, etc.
+
+    # ALÇADA DE APROVAÇÃO
+    aprovado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    data_aprovacao = db.Column(db.DateTime, nullable=True)
+
+    # Relacionamentos
+    itens = db.relationship('PedidoItem', backref='pedido', lazy=True, cascade="all, delete-orphan")
+    aprovador = db.relationship('User', foreign_keys=[aprovado_por_id])
+    solicitacao = db.relationship('SolicitacaoCompra', backref='pedidos_gerados')
+
+class PedidoItem(db.Model):
+    __tablename__ = 'pedido_item'
+    id = db.Column(db.Integer, primary_key=True)
+    pedido_id = db.Column(db.Integer, db.ForeignKey('pedido_compra.id'), nullable=False)
+    descricao = db.Column(db.String(100), nullable=False)
+    quantidade = db.Column(db.Numeric(10, 2), nullable=False)
+    valor_unitario = db.Column(db.Numeric(10, 2), nullable=False)
+    valor_total_item = db.Column(db.Numeric(10, 2), nullable=False)

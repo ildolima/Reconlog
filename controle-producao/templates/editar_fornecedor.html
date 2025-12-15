@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary"><i class="bi bi-truck"></i> {{ titulo }}</h2>
+                <a href="{{ url_for('lista_fornecedores') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+            </div>
+
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light fw-bold text-uppercase small text-muted">
+                        <i class="bi bi-card-heading me-1"></i> Dados de Identificação
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                {{ form.tipo_fornecedor_id.label(class="form-label fw-bold") }}
+                                <div class="input-group">
+                                    {{ form.tipo_fornecedor_id(class="form-select", id="select_tipo") }}
+                                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalNovoTipo" title="Cadastrar Novo Tipo">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
+                                {% for error in form.tipo_fornecedor_id.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-2">
+                                {{ form.cod_sap.label(class="form-label") }}
+                                {{ form.cod_sap(class="form-control", placeholder="Ex: 100200") }}
+                            </div>
+                            <div class="col-md-5">
+                                {{ form.razao_social.label(class="form-label") }} <span class="text-danger">*</span>
+                                {{ form.razao_social(class="form-control") }}
+                            </div>
+                            <div class="col-md-5">
+                                {{ form.nome_fantasia.label(class="form-label") }}
+                                {{ form.nome_fantasia(class="form-control") }}
+                            </div>
+
+                            <div class="col-md-4">
+                                {{ form.documento.label(class="form-label") }} <span class="text-danger">*</span>
+                                {{ form.documento(class="form-control", id="campo_documento", placeholder="CNPJ ou CPF") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.inscricao_estadual.label(class="form-label") }}
+                                {{ form.inscricao_estadual(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light fw-bold text-uppercase small text-muted">
+                        <i class="bi bi-telephone me-1"></i> Contato Comercial
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                {{ form.email.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    {{ form.email(class="form-control", placeholder="pedidos@fornecedor.com") }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.telefone.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-whatsapp"></i></span>
+                                    {{ form.telefone(class="form-control", id="campo_telefone", placeholder="(00) 00000-0000") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light fw-bold text-uppercase small text-muted">
+                        <i class="bi bi-geo-alt me-1"></i> Endereço e Logística
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                {{ form.cep.label(class="form-label") }}
+                                <div class="input-group">
+                                    {{ form.cep(class="form-control", id="cep", placeholder="00000-000") }}
+                                    <button class="btn btn-outline-secondary" type="button" id="btn_busca_cep" title="Buscar CEP">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                                <div id="cep-feedback" class="form-text text-primary" style="display:none;">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Buscando...
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-7">
+                                {{ form.endereco.label(class="form-label") }}
+                                {{ form.endereco(class="form-control", id="logradouro") }}
+                            </div>
+                            
+                            <div class="col-md-2">
+                                <label class="form-label">Número</label>
+                                <input type="text" class="form-control" name="numero_endereco_extra" placeholder="Nº">
+                            </div>
+
+                            <div class="col-md-4">
+                                {{ form.bairro.label(class="form-label") }}
+                                {{ form.bairro(class="form-control", id="bairro") }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.cidade.label(class="form-label") }}
+                                {{ form.cidade(class="form-control", id="cidade") }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ form.uf.label(class="form-label") }}
+                                {{ form.uf(class="form-select", id="uf") }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ form.pais.label(class="form-label") }}
+                                {{ form.pais(class="form-control") }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-5">
+                    {{ form.submit(class="btn btn-primary btn-lg") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalNovoTipo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Tipo de Fornecedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Descrição do Tipo</label>
+                    <input type="text" class="form-control" id="novo_tipo_descricao" placeholder="Ex: Fornecedor de TI">
+                    <small class="text-muted">Isso será salvo no banco de dados imediatamente.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnSalvarTipoRapido">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        
+        // --- 1. MÁSCARAS DE INPUT ---
+        const cepInput = document.getElementById('cep');
+        const telInput = document.getElementById('campo_telefone');
+        
+        if(cepInput){
+            cepInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, "");
+                value = value.replace(/^(\d{5})(\d)/, "$1-$2");
+                e.target.value = value;
+            });
+        }
+
+        if(telInput){
+            telInput.addEventListener('input', function(e) {
+                let v = e.target.value.replace(/\D/g, "");
+                v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+                v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+                e.target.value = v;
+            });
+        }
+
+        // --- 2. BUSCA DE CEP (API VIACEP) ---
+        const btnBuscaCep = document.getElementById('btn_busca_cep');
+        
+        function buscarCep() {
+            const cep = cepInput.value.replace(/\D/g, '');
+            if (cep.length === 8) {
+                document.getElementById('cep-feedback').style.display = 'block';
+                
+                fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.erro) {
+                            document.getElementById('logradouro').value = data.logradouro;
+                            document.getElementById('bairro').value = data.bairro;
+                            document.getElementById('cidade').value = data.localidade;
+                            document.getElementById('uf').value = data.uf;
+                        } else {
+                            alert("CEP não encontrado.");
+                        }
+                    })
+                    .catch(() => alert("Erro ao buscar CEP. Verifique sua conexão."))
+                    .finally(() => {
+                        document.getElementById('cep-feedback').style.display = 'none';
+                    });
+            } else {
+                alert("Digite um CEP válido com 8 números.");
+            }
+        }
+
+        if(cepInput) cepInput.addEventListener('blur', buscarCep);
+        if(btnBuscaCep) btnBuscaCep.addEventListener('click', buscarCep);
+
+        // --- 3. SALVAR NOVO TIPO VIA AJAX ---
+        const btnSalvar = document.getElementById('btnSalvarTipoRapido');
+        if(btnSalvar){
+            btnSalvar.addEventListener('click', function() {
+                const descricao = document.getElementById('novo_tipo_descricao').value;
+                if(!descricao) return alert("Digite uma descrição!");
+
+                // Pega o token CSRF gerado pelo form.hidden_tag()
+                const csrfTokenInput = document.querySelector('input[name="csrf_token"]');
+                const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
+
+                fetch('/api/tipos-fornecedor/novo', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken // Necessário para proteção do Flask
+                    },
+                    body: JSON.stringify({ descricao: descricao })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        // Adiciona ao Select e Seleciona Automaticamente
+                        const select = document.getElementById('select_tipo');
+                        const option = new Option(data.descricao, data.id);
+                        select.add(option, undefined);
+                        select.value = data.id; 
+                        
+                        // Fecha Modal e limpa campo
+                        const modalEl = document.getElementById('modalNovoTipo');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        modalInstance.hide();
+                        document.getElementById('novo_tipo_descricao').value = '';
+                    } else {
+                        alert('Erro: ' + data.error);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Erro ao salvar tipo.");
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

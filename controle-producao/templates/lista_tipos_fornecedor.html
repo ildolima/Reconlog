@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="text-primary"><i class="bi bi-tags"></i> Gerenciar Tipos de Fornecedor</h3>
+                <a href="{{ url_for('lista_fornecedores') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar para Lista
+                </a>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light fw-bold text-uppercase small text-muted">
+                    Cadastrar Novo Tipo
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="row g-2">
+                            <div class="col-md-9">
+                                {{ form.descricao(class="form-control", placeholder="Ex: Revenda de Peças, Consultoria de TI...") }}
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-grid">
+                                    {{ form.submit(class="btn btn-success") }}
+                                </div>
+                            </div>
+                        </div>
+                        {% for error in form.descricao.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-white fw-bold border-bottom">
+                    Tipos Cadastrados
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for tipo in tipos %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="fs-6">{{ tipo.descricao }}</span>
+                        <span class="badge bg-light text-dark border">ID: {{ tipo.id }}</span>
+                    </div>
+                    {% else %}
+                    <div class="list-group-item text-center text-muted py-4">
+                        <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                        Nenhum tipo cadastrado ainda.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

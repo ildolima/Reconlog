@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="bi bi-people"></i> Fornecedores</h2>
+        <div>
+            <a href="{{ url_for('gerenciar_tipos_fornecedor') }}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-tags"></i> Gerenciar Tipos
+            </a>
+            <a href="{{ url_for('novo_fornecedor') }}" class="btn btn-success">
+                <i class="bi bi-plus-lg"></i> Novo Fornecedor
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Razão Social</th>
+                            <th>Nome Fantasia</th>
+                            <th>Tipo</th>
+                            <th>Contato</th>
+                            <th class="text-end pe-4">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in fornecedores %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">{{ f.razao_social }}</td>
+                            <td>{{ f.nome_fantasia or '-' }}</td>
+                            <td>
+                                {% if f.tipo_relacao %}
+                                    <span class="badge bg-secondary">{{ f.tipo_relacao.descricao }}</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark">Sem Tipo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if f.telefone %}
+                                    <div class="small"><i class="bi bi-telephone text-muted"></i> {{ f.telefone }}</div>
+                                {% endif %}
+                                {% if f.email %}
+                                    <div class="small"><i class="bi bi-envelope text-muted"></i> {{ f.email }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="{{ url_for('editar_fornecedor', id=f.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                Nenhum fornecedor cadastrado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
